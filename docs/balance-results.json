@@ -1,0 +1,236 @@
+{
+  "version": "1.6.0",
+  "constants": {
+    "attackDamage": 1.15,
+    "shieldRestore": 0.7,
+    "matchedAbsorption": 1.25,
+    "mismatchedAbsorption": 0.25,
+    "strategyCooldownMs": 3000
+  },
+  "duel": [
+    {
+      "duration": 30,
+      "attackRate": 4,
+      "defenseRate": 6,
+      "matched": false,
+      "winner": "attack",
+      "hp": 0,
+      "seconds": 15.25
+    },
+    {
+      "duration": 30,
+      "attackRate": 4,
+      "defenseRate": 4,
+      "matched": false,
+      "winner": "attack",
+      "hp": 0,
+      "seconds": 13.75
+    },
+    {
+      "duration": 30,
+      "attackRate": 6,
+      "defenseRate": 6,
+      "matched": false,
+      "winner": "attack",
+      "hp": 0,
+      "seconds": 9.185
+    },
+    {
+      "duration": 30,
+      "attackRate": 4,
+      "defenseRate": 6,
+      "matched": true,
+      "winner": "defense",
+      "hp": 100,
+      "seconds": 30
+    },
+    {
+      "duration": 30,
+      "attackRate": 4,
+      "defenseRate": 4,
+      "matched": true,
+      "winner": "defense",
+      "hp": 70.3,
+      "seconds": 30
+    },
+    {
+      "duration": 30,
+      "attackRate": 6,
+      "defenseRate": 6,
+      "matched": true,
+      "winner": "defense",
+      "hp": 37.3,
+      "seconds": 30
+    },
+    {
+      "duration": 60,
+      "attackRate": 4,
+      "defenseRate": 6,
+      "matched": false,
+      "winner": "attack",
+      "hp": 0,
+      "seconds": 30.25
+    },
+    {
+      "duration": 60,
+      "attackRate": 4,
+      "defenseRate": 4,
+      "matched": false,
+      "winner": "attack",
+      "hp": 0,
+      "seconds": 27.75
+    },
+    {
+      "duration": 60,
+      "attackRate": 6,
+      "defenseRate": 6,
+      "matched": false,
+      "winner": "attack",
+      "hp": 0,
+      "seconds": 18.537
+    },
+    {
+      "duration": 60,
+      "attackRate": 4,
+      "defenseRate": 6,
+      "matched": true,
+      "winner": "defense",
+      "hp": 100,
+      "seconds": 60
+    },
+    {
+      "duration": 60,
+      "attackRate": 4,
+      "defenseRate": 4,
+      "matched": true,
+      "winner": "defense",
+      "hp": 70.9,
+      "seconds": 60
+    },
+    {
+      "duration": 60,
+      "attackRate": 6,
+      "defenseRate": 6,
+      "matched": true,
+      "winner": "defense",
+      "hp": 37.9,
+      "seconds": 60
+    },
+    {
+      "duration": 120,
+      "attackRate": 4,
+      "defenseRate": 6,
+      "matched": false,
+      "winner": "attack",
+      "hp": 0,
+      "seconds": 60.5
+    },
+    {
+      "duration": 120,
+      "attackRate": 4,
+      "defenseRate": 4,
+      "matched": false,
+      "winner": "attack",
+      "hp": 0,
+      "seconds": 55.25
+    },
+    {
+      "duration": 120,
+      "attackRate": 6,
+      "defenseRate": 6,
+      "matched": false,
+      "winner": "attack",
+      "hp": 0,
+      "seconds": 36.907
+    },
+    {
+      "duration": 120,
+      "attackRate": 4,
+      "defenseRate": 6,
+      "matched": true,
+      "winner": "defense",
+      "hp": 100,
+      "seconds": 120
+    },
+    {
+      "duration": 120,
+      "attackRate": 4,
+      "defenseRate": 4,
+      "matched": true,
+      "winner": "defense",
+      "hp": 71.2,
+      "seconds": 120
+    },
+    {
+      "duration": 120,
+      "attackRate": 6,
+      "defenseRate": 6,
+      "matched": true,
+      "winner": "defense",
+      "hp": 38.34,
+      "seconds": 120
+    }
+  ],
+  "solo": [
+    {
+      "duration": 30,
+      "defenseRate": 6,
+      "reactive": false,
+      "rngValue": 0.25,
+      "winner": "attack",
+      "hp": 0,
+      "seconds": 23,
+      "matchedPercent": 34
+    },
+    {
+      "duration": 30,
+      "defenseRate": 4,
+      "reactive": true,
+      "rngValue": 0.25,
+      "winner": "defense",
+      "hp": 34.86,
+      "seconds": 30,
+      "matchedPercent": 88
+    },
+    {
+      "duration": 60,
+      "defenseRate": 6,
+      "reactive": false,
+      "rngValue": 0.25,
+      "winner": "attack",
+      "hp": 0,
+      "seconds": 46.25,
+      "matchedPercent": 34
+    },
+    {
+      "duration": 60,
+      "defenseRate": 4,
+      "reactive": true,
+      "rngValue": 0.25,
+      "winner": "defense",
+      "hp": 31.46,
+      "seconds": 60,
+      "matchedPercent": 88
+    },
+    {
+      "duration": 120,
+      "defenseRate": 6,
+      "reactive": false,
+      "rngValue": 0.25,
+      "winner": "attack",
+      "hp": 0,
+      "seconds": 93,
+      "matchedPercent": 34
+    },
+    {
+      "duration": 120,
+      "defenseRate": 4,
+      "reactive": true,
+      "rngValue": 0.25,
+      "winner": "defense",
+      "hp": 30.6,
+      "seconds": 120,
+      "matchedPercent": 88
+    }
+  ]
+}

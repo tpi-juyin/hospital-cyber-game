@@ -1,0 +1,15 @@
+{
+  "mode": "public-tunnel",
+  "platform": "darwin",
+  "arch": "arm64",
+  "bundledNode": "24.21.0",
+  "cleanPath": "/usr/bin:/bin",
+  "unicodeAndSpacePath": true,
+  "hostAuth": true,
+  "participantIsolation": true,
+  "webSocketGameplay": true,
+  "gracefulShutdown": true,
+  "childProcessExited": true,
+  "generatedAt": "2026-10-05T02:37:25.470Z",
+  "note": "HTTP and WebSocket checks only; no browser was opened or controlled."
+}

@@ -1,0 +1,58 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { io } from 'socket.io-client';
+import { startServers } from '../src/server/index';
+import { CloudAuth } from '../src/server/cloud-auth';
+import type { IncomingMessage, ServerResponse } from 'node:http';
+
+const origin = 'https://hospital.example';
+const password = 'test-only-host-password-123';
+test('cloud serves protected host login, validates origin, and ends activity without stopping service', async t => {
+  const server = await startServers({ cloud: { origin, password, port: 0 } }); t.after(() => server.stop());
+  const url = server.playerUrl;
+  assert.equal((await fetch(url + '/api/health')).status, 200);
+  assert.match(await (await fetch(url + '/host')).text(), /主持台登入/);
+  assert.equal((await fetch(url + '/api/host/state')).status, 401);
+  assert.equal((await fetch(url + '/host.html')).status, 404);
+  const login = (value: string, from = origin) => fetch(url + '/host/login', { method: 'POST', headers: { Origin: from }, body: new URLSearchParams({ password: value }), redirect: 'manual' });
+  assert.equal((await login(password, 'https://evil.example')).status, 403);
+  assert.equal((await login('wrong-password-value')).status, 401);
+  const logged = await login(password); assert.equal(logged.status, 303);
+  const cookieHeader = logged.headers.get('set-cookie')!;
+  assert.match(cookieHeader, /HttpOnly; Secure; SameSite=Strict/); assert.doesNotMatch(cookieHeader, /test-only/);
+  const cookie = cookieHeader.split(';')[0];
+  const state = () => fetch(url + '/api/host/state', { headers: { Cookie: cookie } }).then(r => r.json());
+  const action = (a: unknown, from = origin) => fetch(url + '/api/host/action', { method: 'POST', headers: { Cookie: cookie, Origin: from, 'Content-Type': 'application/json' }, body: JSON.stringify(a) });
+  assert.equal((await state()).hostingMode, 'cloud'); assert.equal((await state()).lobby.accepting, false);
+  assert.equal((await state()).lobby.joinUrl, origin);
+  assert.equal((await action({ kind: 'accepting', value: true }, 'https://evil.example')).status, 403);
+  assert.equal((await action({ kind: 'accepting', value: true })).status, 200);
+  assert.equal((await action({ kind: 'rebuild-tunnel' })).status, 400);
+  const socket = io(url, { transports: ['websocket'], extraHeaders: { Origin: origin }, reconnection: false }); t.after(() => socket.close());
+  const session: any = await new Promise((ok, fail) => { socket.once('session', ok); socket.once('connect_error', fail); });
+  const bad = io(url, { transports: ['websocket'], extraHeaders: { Origin: 'https://evil.example' }, reconnection: false }); t.after(() => bad.close());
+  await new Promise<void>(ok => bad.once('connect_error', () => ok()));
+  await new Promise<void>((ok, fail) => socket.emit('action', { kind: 'create', mode: 'solo', role: 'attack', duration: 30, startImmediately: true }, (r: any) => r.ok ? ok() : fail(r)));
+  assert.equal(server.engine.rooms.size, 1);
+  const reset = new Promise<any>(ok => socket.once('hosting-reset', ok));
+  assert.equal((await action({ kind: 'stop' })).status, 200); assert.equal((await reset).reason, 'activity-ended');
+  assert.equal(server.engine.rooms.size, 0); assert.equal(server.engine.players.size, 0);
+  assert.equal((await state()).lobby.accepting, false); assert.equal((await fetch(url + '/api/health')).status, 200);
+  assert.equal((await action({ kind: 'accepting', value: true })).status, 200);
+  assert.throws(() => server.engine.connect(session.token));
+  assert.equal((await fetch(url + '/host/logout', { method: 'POST', headers: { Cookie: cookie, Origin: origin }, redirect: 'manual' })).status, 303);
+  assert.equal((await fetch(url + '/api/host/state', { headers: { Cookie: cookie } })).status, 401);
+});
+
+test('cloud auth expires sessions and rate limits password attempts', async () => {
+  let now = 0; let cookie = '';
+  const auth = new CloudAuth(password, () => now);
+  const res = { setHeader: (_: string, value: string) => { cookie = value.split(';')[0]; } } as unknown as ServerResponse;
+  assert.equal(await auth.login(password, res), 200);
+  const req = { headers: { cookie } } as IncomingMessage;
+  assert.equal(auth.authorized(req), true); now = 8 * 60 * 60_000; assert.equal(auth.authorized(req), false);
+  for (let i = 0; i < 20; i++) assert.equal(await auth.login('wrong', res), 401);
+  assert.equal(await auth.login(password, res), 429);
+  now += 60_001; assert.equal(await auth.login(password, res), 200);
+  assert.throws(() => new CloudAuth('short'));
+});

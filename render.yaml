@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: hospital-cyber-game
+    runtime: node
+    plan: free
+    region: singapore
+    buildCommand: npm ci --include=dev && npm run build
+    startCommand: npm run start:cloud
+    healthCheckPath: /api/health
+    autoDeployTrigger: off
+    envVars:
+      - key: NODE_VERSION
+        value: 24.21.0
+      - key: HOST_PASSWORD
+        sync: false

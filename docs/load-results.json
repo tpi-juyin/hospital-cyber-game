@@ -1,0 +1,34 @@
+{
+  "note": "Local loopback; process metrics include the server and 30 simulated clients, not public tunnel or mobile browser performance.",
+  "generatedAt": "2026-10-05T02:36:01.981Z",
+  "results": [
+    {
+      "mode": "duo",
+      "clients": 30,
+      "rooms": 15,
+      "seconds": 12,
+      "acceptedTapAcks": 2040,
+      "snapshotMessagesPerSecond": 297.5,
+      "payloadKBPerSecond": 241.4,
+      "roundTripP95Ms": 5.24,
+      "eventLoopP99Ms": 13.24,
+      "processCpuPercentOfOneCore": 8,
+      "processRssMB": 115,
+      "disconnectedClients": 0
+    },
+    {
+      "mode": "solo",
+      "clients": 30,
+      "rooms": 30,
+      "seconds": 12,
+      "acceptedTapAcks": 2040,
+      "snapshotMessagesPerSecond": 295,
+      "payloadKBPerSecond": 242.9,
+      "roundTripP95Ms": 3.85,
+      "eventLoopP99Ms": 12.48,
+      "processCpuPercentOfOneCore": 6.2,
+      "processRssMB": 117.2,
+      "disconnectedClients": 0
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "gameVersion": "1.9.0",
+  "ultimateMode": true,
+  "note": "Local loopback; process metrics include the server and 30 simulated clients, not public tunnel or mobile browser performance.",
+  "generatedAt": "2026-10-05T07:52:11.850Z",
+  "results": [
+    {
+      "mode": "duo",
+      "clients": 30,
+      "rooms": 15,
+      "seconds": 26,
+      "acceptedTapAcks": 4440,
+      "snapshotMessagesPerSecond": 298.8,
+      "payloadKBPerSecond": 292.2,
+      "roundTripP95Ms": 4.57,
+      "eventLoopP99Ms": 12.72,
+      "processCpuPercentOfOneCore": 6.4,
+      "processRssMB": 116,
+      "disconnectedClients": 0,
+      "ultimateAcks": 60
+    },
+    {
+      "mode": "solo",
+      "clients": 30,
+      "rooms": 30,
+      "seconds": 26,
+      "acceptedTapAcks": 3754,
+      "snapshotMessagesPerSecond": 299.8,
+      "payloadKBPerSecond": 303,
+      "roundTripP95Ms": 3.89,
+      "eventLoopP99Ms": 12.4,
+      "processCpuPercentOfOneCore": 4.6,
+      "processRssMB": 131.1,
+      "disconnectedClients": 0,
+      "ultimateAcks": 55
+    }
+  ]
+}

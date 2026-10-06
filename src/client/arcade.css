@@ -1,0 +1,266 @@
+/* Shared arcade art direction: every player scene and the host use the same cabinet. */
+:root{background:#080f23;color-scheme:dark}
+body.arcade-theme{display:flow-root}
+body.arcade-theme{--ink:#eff5ff;--muted:#afbed8;--paper:#172640;--line:#41587a;--orange:#ffca69;--mint:#77ebd0;--shadow:0 5px 0 #050b19;color:var(--ink);color-scheme:dark;background:#080f23;background-image:radial-gradient(ellipse at 10% 10%,#683a913f,transparent 52%),radial-gradient(ellipse at 100% 65%,#14798a35,transparent 50%),linear-gradient(#8acbff07 1px,transparent 1px),linear-gradient(90deg,#8acbff07 1px,transparent 1px);background-size:auto,auto,42px 42px,42px 42px;min-height:100svh}
+body.arcade-theme button,body.arcade-theme input,body.arcade-theme select{font:inherit}
+body.arcade-theme button{touch-action:manipulation}
+body.arcade-theme button:focus-visible,body.arcade-theme input:focus-visible,body.arcade-theme select:focus-visible,body.arcade-theme summary:focus-visible{outline:3px solid #ffe08d;outline-offset:4px}
+body.arcade-theme .player-shell{width:min(100%,480px);min-height:100svh;padding:14px 20px max(14px,env(safe-area-inset-bottom));position:relative;background:linear-gradient(150deg,#17203b70,#101c3040);border-left:1px solid #7383a524;border-right:1px solid #7383a524}
+body.arcade-theme .topbar{height:38px;flex-shrink:0;gap:8px}
+body.arcade-theme .brand{color:#f2f2ff;font-size:12px;letter-spacing:1.5px;font-weight:950}
+body.arcade-theme .brand svg{color:#ffd077}body.arcade-theme .brand-light{color:#9ae8dc;font-weight:800}
+body.arcade-theme .version-label{font-size:8px;color:#a8b6d5;letter-spacing:1px}
+body.arcade-theme .preferences{gap:6px}
+body.arcade-theme .icon-button{width:33px;height:33px;border:2px solid #4a5778;background:#19243e;border-radius:9px;color:#94a4c3;box-shadow:0 3px 0 #050c1d}
+body.arcade-theme .icon-button.audio-on{color:#aaffea;background:#204543;border-color:#63b3a1}
+body.arcade-theme .motion-button{color:#b7c5de;font-size:9px;letter-spacing:.2px}
+body.arcade-theme .connection{font-size:9px;color:#b4c9df;margin:8px 0 2px;letter-spacing:.5px}
+body.arcade-theme .connection.offline{color:#ffb79f}body.arcade-theme .connection span{background:#6fe8be}
+body.arcade-theme .page-footer{font-size:8px;line-height:1.6;text-align:center;color:#8c9dbb;margin-top:14px;letter-spacing:.7px}
+body.arcade-theme .eyebrow{font-size:10px;font-weight:850;color:#8fe7db;letter-spacing:2px}
+body.arcade-theme .primary-button,body.arcade-theme .game-mode{border:2px solid #ffe6a0;border-radius:12px;background:linear-gradient(#ffdd83,#ffb957);color:#262137;box-shadow:0 5px 0 #a66532,0 7px 0 #050a18;font-weight:950;letter-spacing:1px}
+body.arcade-theme .primary-button{min-height:50px;margin-top:16px;font-size:16px}
+body.arcade-theme .primary-button:active,body.arcade-theme .game-mode:active{transform:translateY(3px);box-shadow:0 2px 0 #a66532}
+body.arcade-theme .primary-button:disabled{filter:none;opacity:.45}
+body.arcade-theme .secondary-button,body.arcade-theme .party-button,body.arcade-theme .retry-button{border:2px solid #53698e;background:#23324f;color:#ebf0ff;border-radius:9px;box-shadow:0 3px 0 #060d20;font-size:12px;font-weight:800}
+body.arcade-theme .text-button{color:#b6c6e2;font-size:12px}body.arcade-theme .micro-copy,body.arcade-theme .simulation-note{color:#9aacc9;font-size:10px}
+body.arcade-theme .text-input{background:#0c1830;border:2px solid #50628a;color:#f5f4ff;border-radius:9px;box-shadow:inset 0 3px 0 #040b1950;font-size:15px}
+body.arcade-theme .text-input::placeholder{color:#9baac9}body.arcade-theme .dice-button{background:#6b4d98;border:2px solid #be9aeb;color:#fff0ff;border-radius:9px;box-shadow:0 4px 0 #302347}
+body.arcade-theme .field-label{color:#dbe6ff;font-weight:850;font-size:12px;letter-spacing:1px}body.arcade-theme .nickname-hint{font-size:9px;color:#96a8c8}
+body.arcade-theme .title-screen{position:relative;text-align:center;padding-top:16px}
+body.arcade-theme .season-stamp{display:inline-block;font-size:9px;font-weight:800;letter-spacing:2px;color:#92a7cf;border:1px solid #4f6185;padding:5px 14px;background:#101c32;border-radius:4px;transform:rotate(-3deg)}
+body.arcade-theme .game-logo{font-size:29px;line-height:1.2;letter-spacing:5px;font-weight:1000;margin:20px 0 6px;text-shadow:3px 3px 0 #060d20;transform:rotate(-3deg)}
+body.arcade-theme .game-logo strong{display:block;font-size:62px;letter-spacing:3px;color:#ffd475;text-shadow:3px 3px 0 #b66c4e,5px 6px 0 #050b19}
+body.arcade-theme .game-logo strong span{position:absolute;color:#88eade;font-size:25px;transform:rotate(16deg);margin:9px 0 0 6px}
+body.arcade-theme .title-stage{margin:0 -4px;position:relative}
+body.arcade-theme .title-stage .arena{height:180px;margin-top:8px}body.arcade-theme .title-stage .fighter{width:44%;max-width:170px}
+body.arcade-theme .title-tag{font-size:11px;letter-spacing:1px;color:#cbdaee;margin:9px 0 20px}
+body.arcade-theme .arena-lines{height:60%;bottom:7%;border:1px solid #628ad944;border-bottom:3px solid #639ad176;border-radius:50%;background:radial-gradient(ellipse,#38496c85,#111b3250 68%),repeating-linear-gradient(0deg,transparent 0 15px,#6aacbb18 16px 17px)}
+body.arcade-theme .fighter>span{border:1px solid #87609d;background:#352f52;color:#f1d6ff;font-size:8px;letter-spacing:2px;transform:rotate(-4deg);box-shadow:0 2px 0 #040818}
+body.arcade-theme .defender-art>span{background:#183f49;border-color:#57868b;color:#abf9e5;transform:rotate(4deg)}
+body.arcade-theme .versus>span{font-size:25px;font-weight:1000;color:#ffce72;text-shadow:2px 3px 0 #704357;transform:rotate(-10deg)}
+body.arcade-theme .versus i{background:#ffd17c}
+body.arcade-theme .game-menu{display:grid;gap:13px}
+body.arcade-theme .game-mode{display:flex;align-items:center;gap:16px;text-align:left;padding:13px 19px;min-height:70px}
+body.arcade-theme .game-mode>span{flex:1;font-size:20px}body.arcade-theme .game-mode small{display:block;font-size:9px;letter-spacing:1.2px;color:#655042;margin-top:3px}
+body.arcade-theme .game-mode.duo{background:linear-gradient(#9af1df,#59c6c7);border-color:#c6fff3;box-shadow:0 5px 0 #277a89,0 7px 0 #050a18;color:#16334b}
+body.arcade-theme .game-mode.duo small{color:#285875}
+body.arcade-theme .party-button{display:flex;align-items:center;justify-content:center;gap:8px;min-height:45px;margin-top:2px;font-size:12px}
+body.arcade-theme .party-button span{font-size:9px;letter-spacing:1px;color:#a6bade;margin-left:8px}
+body.arcade-theme .menu-status{display:flex;justify-content:space-between;color:#98acce;font-size:9px;margin-top:20px;letter-spacing:.5px}
+body.arcade-theme .selection-heading{display:flex;align-items:center;gap:15px;margin:18px 0 17px}
+body.arcade-theme .selection-heading h1{font-size:27px;letter-spacing:2px;margin:4px 0 0;font-weight:950}
+body.arcade-theme .menu-back{height:39px;width:39px;border:2px solid #52658d;border-radius:10px;background:#23324e;color:#e3e9fc;box-shadow:0 3px 0 #070d1c;font-size:22px}
+body.arcade-theme .setup-card,body.arcade-theme .waiting-card,body.arcade-theme .result-card{background:linear-gradient(140deg,#213151,#17243d);border:2px solid #4b608a;border-top-color:#7b91b9;border-radius:15px;padding:18px;box-shadow:0 6px 0 #050c20,inset 0 0 0 3px #101b3150}
+body.arcade-theme .mode-tabs{background:#0c1730;border:1px solid #3e557f;border-radius:8px;margin:14px 0;padding:3px;gap:5px}
+body.arcade-theme .mode-tabs button{border-radius:5px;color:#b5c5e0;font-size:11px;padding:8px 3px;letter-spacing:.3px}
+body.arcade-theme .mode-tabs .selected{background:#3c517b;box-shadow:inset 0 2px 0 #7e90c377;color:#fff}
+body.arcade-theme .mode-tabs small{color:#a1b7d5;font-size:8px}
+body.arcade-theme .section-label{color:#dbe9fe;font-size:12px;letter-spacing:.5px}body.arcade-theme .section-label small{color:#94acca;font-size:9px}
+body.arcade-theme .role-cards{gap:9px}
+body.arcade-theme .role-card{background:linear-gradient(160deg,#423054,#1c223e);border:2px solid #766184;border-radius:10px;padding:7px 3px 10px;box-shadow:0 4px 0 #070e20;color:#ecd8ff;overflow:hidden}
+body.arcade-theme .role-card.defense{background:linear-gradient(160deg,#214957,#17273f);border-color:#4c7e8b;color:#c2fff0}
+body.arcade-theme .role-card .role-art{width:123px;height:107px;max-width:100%;overflow:visible}
+body.arcade-theme .role-card b{font-size:16px;font-weight:950;letter-spacing:1px}body.arcade-theme .role-card small{font-size:9px;color:#bdc4df;margin-top:4px}
+body.arcade-theme .role-card i{background:#151c36;border:1px solid #826aab;color:#dfbbff;z-index:1}
+body.arcade-theme .role-card.attack.selected{background:linear-gradient(150deg,#694188,#2f274e);border-color:#e2b4ff;box-shadow:0 4px 0 #3f2459,inset 0 0 0 1px #b477d5}
+body.arcade-theme .role-card.defense.selected{background:linear-gradient(150deg,#316b74,#1a354c);border-color:#96f4df;box-shadow:0 4px 0 #174f60,inset 0 0 0 1px #6ecccf}
+body.arcade-theme .role-card.selected:after{content:'已選擇';position:absolute;top:9px;left:8px;font-size:8px;font-weight:900;letter-spacing:1px;color:#fff1a4;transform:rotate(-8deg)}
+body.arcade-theme .role-card.attack.selected i{color:#ecc8ff}body.arcade-theme .role-card.defense.selected i{color:#aaffec}
+body.arcade-theme .duration-box{margin-top:16px;background:#111e35;border:1px solid #3b5278;border-radius:8px;padding:11px 12px}
+body.arcade-theme .duration-row{font-size:12px}body.arcade-theme .duration-row strong{color:#ffda87;font-size:20px}
+body.arcade-theme .range{accent-color:#83e7d1}body.arcade-theme .range-labels{color:#92a6c9;font-size:9px}
+body.arcade-theme .screen-loadout .divider,body.arcade-theme .screen-loadout .join-form,body.arcade-theme .screen-loadout .invite-button,body.arcade-theme .screen-loadout .micro-copy{display:none}
+body.arcade-theme .screen-join .mode-tabs,body.arcade-theme .screen-join .section-label,body.arcade-theme .screen-join .role-cards,body.arcade-theme .screen-join .duration-box,body.arcade-theme .screen-join #create{display:none}
+body.arcade-theme .screen-join .setup-card{margin-top:36px;padding:25px 20px}
+body.arcade-theme .screen-join .divider{margin:30px 0 20px;color:#d3dcf7;border-color:#44567b}body.arcade-theme .screen-join .divider span{background:#1d2c48}
+body.arcade-theme .screen-join .code-input{font-size:28px;letter-spacing:4px;min-width:0}body.arcade-theme .screen-join .join-form{gap:9px}
+body.arcade-theme .screen-join .invite-intro{margin:24px 0 14px;color:#c7d8ef;font-size:12px;line-height:1.7;text-align:center}
+body.arcade-theme .screen-loadout .invite-intro{display:none}
+body.arcade-theme .screen-join .invite-button{margin-top:0;min-height:58px;background:linear-gradient(#ffe192,#ffc15e);border:2px solid #fff0bc;border-bottom-width:4px;color:#32203b;border-radius:10px;box-shadow:0 5px 0 #935537;font-size:18px;font-weight:900}
+body.arcade-theme .screen-join .invite-button:hover:not(:disabled){background:linear-gradient(#ffedb9,#ffd078)}
+body.arcade-theme .room-header{text-align:center;margin:20px 0}body.arcade-theme .room-header h1{font-size:28px;font-weight:950;letter-spacing:1px;color:#ffe096}
+body.arcade-theme .room-header p{color:#b2c4e3;font-size:11px}
+body.arcade-theme .solo-illustration{background:#111d33;border:1px solid #435979;border-radius:10px;margin-bottom:17px}
+body.arcade-theme .solo-illustration .arena{height:137px}body.arcade-theme .room-code-label{color:#aebfdf;font-size:11px;letter-spacing:2px}
+body.arcade-theme .big-room-code{font-size:50px;line-height:1.4;color:#ffdd87;text-shadow:3px 3px 0 #7a5061;font-weight:950;letter-spacing:12px}
+body.arcade-theme .invite-tools{border-color:#4a5c82;background:#111d34;border-radius:10px;padding:10px;gap:10px;margin-bottom:18px}
+body.arcade-theme .invite-tools canvas{background:#fffdf5;border-radius:7px;padding:3px}body.arcade-theme .invite-tools p{color:#bbc9e2;font-size:10px}
+body.arcade-theme .member{border:1px solid #76568c;background:#302847;border-radius:8px;color:#f3e5ff}
+body.arcade-theme .member.defense{background:#173c47;border-color:#498089;color:#d0fff0}
+body.arcade-theme .member small{color:#a7b9d9;font-size:9px}body.arcade-theme .member b{font-size:13px}
+body.arcade-theme .member-icon{background:#20223f;color:#ddb8ff}body.arcade-theme .defense .member-icon{color:#80e5d0;background:#152d3e}
+body.arcade-theme .ready-badge{color:#bcc9e2;background:#202c47;border:1px solid #556788;border-radius:5px;font-size:9px}
+body.arcade-theme .ready-badge.is-ready{color:#b7ffdf;background:#285345;border-color:#70b79d}
+body.arcade-theme .switch-side{font-size:11px;color:#b9cbe6}body.arcade-theme .mode-description{background:#30294e;color:#e1c9fb;border:1px solid #71578e;font-size:10px}
+body.arcade-theme .ready-button{background:linear-gradient(#86e6c6,#4aac9c);color:#173b42;border-color:#b9ffe1;box-shadow:0 5px 0 #216769}
+body.arcade-theme .tip-card{background:#182b42;border:1px solid #3c6e82;border-radius:8px;color:#9ec9de}body.arcade-theme .tip-card p{color:#b8d1e6;font-size:10px}body.arcade-theme .tip-card b{color:#8ce7d7}
+body.arcade-theme .screen-waiting .room-header{margin:12px 0}
+body.arcade-theme .screen-waiting .room-header h1{font-size:24px;margin:5px 0}
+body.arcade-theme .screen-waiting .room-header p{margin:5px 0}
+body.arcade-theme .waiting-card{padding:14px}
+body.arcade-theme .waiting-card .big-room-code{font-size:44px;line-height:1.2}
+body.arcade-theme .waiting-card .invite-tools{padding:8px;margin:8px 0 12px}
+body.arcade-theme .waiting-card .member-list{gap:8px}
+body.arcade-theme .waiting-card .member{padding:8px 10px}
+body.arcade-theme .waiting-card .switch-side{margin-top:5px}
+body.arcade-theme .waiting-card .duration-box{margin:8px 0;padding:8px 10px}
+body.arcade-theme .waiting-card .range{margin-top:3px}
+body.arcade-theme .waiting-card .mode-description{margin-top:8px;padding:7px 9px}
+body.arcade-theme .waiting-card .micro-copy{margin-top:6px}
+body.arcade-theme .waiting-card .primary-button{margin-top:10px}
+body.arcade-theme .waiting-card .solo-illustration{margin-bottom:12px}
+body.arcade-theme .waiting-card .solo-illustration .arena{height:112px}
+/* Battle HUD: compact equipment strip, wide field, tactile action deck. */
+body.arcade-theme .duo-setup-hint{padding:22px 12px;text-align:center;color:#cfdbf4;background:#152039;border:1px dashed #687a9d;border-radius:8px;font-size:13px;line-height:2}
+body.arcade-theme .screen-join .duo-setup-hint{display:none}
+body.arcade-theme .room-share{display:flex;justify-content:space-between;align-items:center;gap:10px}
+body.arcade-theme .room-share>div{display:flex;align-items:center;gap:10px}
+body.arcade-theme .room-share .big-room-code{font-size:30px;letter-spacing:5px}
+body.arcade-theme .room-qr-details{color:#aec6e8;font-size:10px;margin:8px 0 12px}
+body.arcade-theme .room-qr-details summary{cursor:pointer;padding:5px}
+body.arcade-theme .player-seats{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+body.arcade-theme .player-seats .member{min-width:0;gap:7px;padding:8px}
+body.arcade-theme .player-seats .member>div{min-width:0}
+body.arcade-theme .player-seats .member b{font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+body.arcade-theme .player-seats .member-icon{width:25px;height:25px;flex-shrink:0}
+body.arcade-theme .player-seats .ready-badge{display:inline-block;padding:2px 5px;margin-top:4px}
+body.arcade-theme .member.empty{border-style:dashed;background:#18253c;color:#a7b9d9}
+body.arcade-theme .room-role-selection{margin-top:14px}
+body.arcade-theme .room-role-selection .section-label{font-size:11px;margin-bottom:7px}
+body.arcade-theme .room-role-selection .role-art{height:82px;width:100%}
+body.arcade-theme .room-role-selection .role-art svg{height:90px}
+body.arcade-theme .room-role-selection .role-card{padding:4px 2px 7px}
+body.arcade-theme .room-role-selection .role-card b{font-size:14px}
+body.arcade-theme .room-role-selection .role-card small{display:none}
+body.arcade-theme .role-hint{min-height:32px;margin-top:10px;padding:7px 4px;text-align:center;color:#a6efda;font-size:10px;border:1px solid #426979;border-radius:5px}
+body.arcade-theme .role-hint.is-conflict{background:#653444;color:#fff0b9;border-color:#e7a083}
+body.arcade-theme .battle-shell{height:100svh;min-height:0;display:flex;flex-direction:column;padding-top:9px;padding-bottom:max(12px,env(safe-area-inset-bottom));overflow:hidden}
+body.arcade-theme .battle-shell>.connection{display:none}
+body.arcade-theme .battle-top{margin:12px 0 0;align-items:center}
+body.arcade-theme .side-title{font-size:23px;font-weight:950;letter-spacing:1px;margin:3px 0;color:#ead2ff}body.arcade-theme .side-title.defense{color:#a6f7e2}
+body.arcade-theme .timer{padding:7px 10px;border:2px solid #7690b4;background:#101d34;border-radius:9px;box-shadow:0 4px 0 #040b1a;color:#ffe18e;gap:5px;position:relative}
+body.arcade-theme .timer b{font-size:32px;line-height:1;font-weight:950}body.arcade-theme .timer small{font-size:9px;color:#b9c7dd}
+body.arcade-theme .timer.urgent{background:#642e41;border-color:#ffb09a;color:#fff0b0;animation:arcade-hurry .7s ease-in-out infinite}
+body.arcade-theme .battle-objective{font-size:10px;color:#b1c5e1;margin:9px 0 12px;line-height:1.4;min-height:30px}
+body.arcade-theme .surrender-button{border:1px solid #886984;background:#382b47;color:#edc7d2;border-radius:6px;padding:6px 9px;min-height:32px;font-size:10px}
+body.arcade-theme .health-card{display:grid;grid-template-columns:1fr 1fr;gap:7px 14px;background:#17283f;border:2px solid #506788;border-radius:9px;box-shadow:0 4px 0 #050d1e,inset 0 2px 0 #8aa6c426;padding:11px 13px}
+body.arcade-theme .meter-label{grid-area:1/1;margin:0;font-size:10px;color:#d3e5f3}body.arcade-theme .meter-label b{font-size:12px;color:#fff3bb}
+body.arcade-theme .meter.hp{grid-area:2/1}body.arcade-theme .shield-label{grid-area:1/2;margin:0}body.arcade-theme .meter.shield{grid-area:2/2;margin:0}
+body.arcade-theme .meter{background:#070f24;border:1px solid #58718d;border-radius:3px;height:11px;box-shadow:inset 0 2px 0 #0006}
+body.arcade-theme .meter i{border-radius:1px;background:repeating-linear-gradient(90deg,#83e5a6 0 14px,#53b58c 14px 16px);box-shadow:inset 0 2px 0 #e4ffe867}
+body.arcade-theme .meter.shield i{background:repeating-linear-gradient(90deg,#89d5fc 0 14px,#4e95c9 14px 16px)}
+body.arcade-theme .health-card.critical{border-color:#ed8f7c}body.arcade-theme .health-card.critical .hp i{background:#f29078}
+body.arcade-theme .battle-shell>.battle-arena{flex:1 1 auto;min-height:50px;max-height:270px;margin:14px -7px 8px;display:flex;flex-direction:column;border:1px solid #52668c5c;border-radius:13px;background:linear-gradient(180deg,#18233f,#253855);box-shadow:inset 0 0 40px #030a1730;overflow:hidden}
+body.arcade-theme .battle-arena:before{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent 48%,#87b4cf17 49% 51%,transparent 52%),linear-gradient(180deg,transparent 73%,#768ce026 74%,transparent 75%),repeating-linear-gradient(90deg,transparent 0 32px,#88b8d10a 33px 34px);pointer-events:none}
+body.arcade-theme .battle-arena .arena{flex:1 1 auto;min-height:0;height:auto;z-index:1;margin:0 6px}
+body.arcade-theme .battle-arena .fighter{width:45%;height:100%;max-width:200px;max-height:220px;display:flex;align-items:center;justify-content:center}
+body.arcade-theme .battle-arena .character{height:100%;width:100%;max-height:215px}
+body.arcade-theme .battle-arena .versus>span{font-size:20px}body.arcade-theme .battle-arena .arena-lines{bottom:7%;height:43%;border-color:#9abde345}
+body.arcade-theme .versus-names{position:relative;z-index:1;display:flex;justify-content:space-between;margin:0 12px 8px;gap:8px;height:20px;flex-shrink:0;font-size:10px}
+body.arcade-theme .versus-names span{background:#322841;border:1px solid #785c91;border-radius:4px;padding:2px 8px;color:#edc8ff;max-width:47%;white-space:nowrap;text-overflow:ellipsis;overflow:hidden}
+body.arcade-theme .versus-names span:last-child{background:#1b3f4b;border-color:#4d8792;color:#b9ffe8}
+body.arcade-theme .battle-shell .intel-strip{display:flex;justify-content:space-between;background:#111d33;border:1px solid #466187;border-radius:6px;color:#9cafcf;font-size:10px;padding:7px 9px;gap:8px;margin-bottom:12px;line-height:1.5}
+body.arcade-theme .battle-shell .intel-strip b{font-size:14px;font-weight:900;color:#eed3ff}body.arcade-theme .battle-shell .intel-strip span:last-child b{color:#96efdc}
+body.arcade-theme .controls{background:#101d32;border:2px solid #425b80;border-radius:12px;padding:12px 10px 10px;box-shadow:0 5px 0 #040c1c;flex-shrink:0}
+body.arcade-theme .controls .section-label{font-size:10px;letter-spacing:0;align-items:center;margin-bottom:10px;gap:5px}
+body.arcade-theme .controls .match-hint{font-size:10px;border-radius:4px;padding:4px 6px}
+body.arcade-theme .controls .match-hint.is-matched{background:#234d43;color:#c1ffe2;border-color:#659789}
+body.arcade-theme .controls .match-hint.is-mismatched{background:#713043;color:#fff4d3;border-color:#f0a98b;box-shadow:0 2px 0 #060d23}
+body.arcade-theme .strategy-grid{gap:6px}body.arcade-theme .strategy-button{background:linear-gradient(#354263,#24304b);border:2px solid #687a9d;border-bottom-width:4px;border-radius:8px;color:#bbc9e2;min-height:85px;padding:8px 2px 7px;gap:5px;position:relative}
+body.arcade-theme .strategy-button b{color:#e0e7f6;font-size:12px;font-weight:850;white-space:nowrap}body.arcade-theme .strategy-button small{color:#a9bbd7;font-size:9px;white-space:nowrap}
+body.arcade-theme .strategy-button.attack.selected{background:linear-gradient(#85569e,#603d83);border-color:#e0b0fa;color:#ffdcfa}body.arcade-theme .strategy-button.defense.selected{background:linear-gradient(#3d8a93,#2c677a);border-color:#a4f9e3;color:#dcffed}
+body.arcade-theme .strategy-button.selected:before{content:'';position:absolute;left:30%;right:30%;top:-3px;height:3px;background:#fff3b0;border-radius:4px}
+body.arcade-theme .strategy-button.selected small{color:#fff0b5}body.arcade-theme .strategy-button:disabled:not(.selected){opacity:.55!important}
+/* A fixed-height charge strip becomes the cast button without moving the moves below. */
+body.arcade-theme .ultimate-panel{margin-bottom:10px;height:44px}
+body.arcade-theme .ultimate-panel [hidden]{display:none!important}
+body.arcade-theme .ultimate-meter,body.arcade-theme .ultimate-panel .ultimate-button{position:relative;overflow:hidden;box-sizing:border-box;width:100%;height:44px;min-height:0;border:2px solid #896a9e;border-radius:7px;background:#28223e;color:#f0daff;opacity:1!important}
+body.arcade-theme .ultimate-meter>span,body.arcade-theme .ultimate-panel .ultimate-button{display:flex;align-items:center;gap:8px;padding:0 10px;font-size:12px}
+body.arcade-theme .ultimate-meter>span{position:relative;height:100%;z-index:1}
+body.arcade-theme .ultimate-meter small,body.arcade-theme .ultimate-button>span{margin-left:auto;font-size:11px;font-weight:800;white-space:nowrap}
+body.arcade-theme .ultimate-meter .ultimate-charge{position:absolute;inset:0 auto 0 0;height:auto;background:repeating-linear-gradient(100deg,#835393 0 12px,#724382 12px 15px);opacity:.65;transition:width .1s linear}
+body.arcade-theme .ultimate-panel.defense .ultimate-meter{background:#173641;border-color:#51828f;color:#c9fff0}
+body.arcade-theme .ultimate-panel.defense .ultimate-meter .ultimate-charge{background:repeating-linear-gradient(100deg,#42887d 0 12px,#326c68 12px 15px)}
+body.arcade-theme .ultimate-meter.spent{opacity:.55!important}
+body.arcade-theme .ultimate-panel .ultimate-button{border-bottom-width:4px;box-shadow:0 3px 0 #040c1c}
+body.arcade-theme .ultimate-panel .ultimate-button .ultimate-charge{position:absolute;left:0;bottom:0;height:3px;transition:width .1s linear}
+body.arcade-theme .ultimate-button.defense{background:linear-gradient(#254959,#192e45);border-color:#6b9fb4;color:#b4f4fb}
+body.arcade-theme .ultimate-button.charged,body.arcade-theme .ultimate-button.active{background:linear-gradient(#a05181,#6b395f);border-color:#ffd383;color:#fff1c8;box-shadow:0 0 0 1px #ffdc8150}
+body.arcade-theme .ultimate-button.defense.charged,body.arcade-theme .ultimate-button.defense.active{background:linear-gradient(#447f7f,#26505f);border-color:#ffdf93;color:#efffe8}
+body.arcade-theme .ultimate-button .ultimate-charge{background:#ffd27d}
+body.arcade-theme .tap-button{margin-top:13px;border:2px solid #e3b4fb;border-bottom-width:5px;border-radius:11px;min-height:75px;background:linear-gradient(#ae71c9,#8951aa);box-shadow:0 4px 0 #362245;color:#fff7ff;padding:12px 14px;position:relative}
+body.arcade-theme .tap-button.defense{background:linear-gradient(#69d9c7,#3ba8af);border-color:#c2ffec;box-shadow:0 4px 0 #1f535e;color:#112e41}
+body.arcade-theme .tap-button>span{font-weight:1000;font-size:25px;letter-spacing:2px}body.arcade-theme .tap-button small{font-size:9px;letter-spacing:.5px;color:inherit;opacity:.8}
+body.arcade-theme .tap-button.pressed{transform:translateY(3px);box-shadow:none}body.arcade-theme .tap-button.ultimate-tap{background:linear-gradient(#ffc580,#e98382);border-color:#fff5b8;color:#401d3b;box-shadow:0 4px 0 #804352}
+body.arcade-theme .tap-counter{font-size:10px;color:#b3c8e0;margin-top:12px;letter-spacing:.3px}body.arcade-theme .tap-counter b{color:#fff0ab;font-size:13px}body.arcade-theme .tap-counter span{color:#90a9ce;font-size:9px}
+body.arcade-theme .battle-shell .page-footer{display:none}
+body.arcade-theme .battle-arena.overdrive-attack{border-color:#d697f9;background:linear-gradient(130deg,#633972,#273a55)}body.arcade-theme .battle-arena.overdrive-defense{border-color:#9af9dc;background:linear-gradient(130deg,#29305a,#246174);box-shadow:inset 0 0 0 3px #7ff7d526}body.arcade-theme .battle-arena.overdrive-attack.overdrive-defense{background:linear-gradient(115deg,#653c74,#285b68)}
+/* Match overlays, confirmation windows and results share the same game panels. */
+body.arcade-theme .game-overlay{background:#030a20dc;backdrop-filter:none;padding:20px}
+body.arcade-theme .countdown-card{border:3px solid #acc0e9;border-bottom-width:7px;background:linear-gradient(150deg,#334669,#1b2948);color:#eef6ff;border-radius:15px;box-shadow:0 12px 0 #020917,0 0 0 5px #162641;padding:28px 22px;position:relative}
+body.arcade-theme .countdown-card>span{font-size:15px;color:#aae9dc}body.arcade-theme .countdown-card>b{color:#ffd477;text-shadow:5px 5px 0 #865475;font-size:115px;line-height:1.25}body.arcade-theme .countdown-card p{color:#bdcdeb;font-size:12px}
+body.arcade-theme .countdown-card>svg{color:#9af1df}body.arcade-theme #toast{background:#273a5d;border:2px solid #9ab1d7;color:#fff3bf;border-radius:9px;box-shadow:0 4px 0 #050d1f;font-size:12px;z-index:90}
+body.arcade-theme .result-hero{padding:21px 0 0;position:relative;isolation:isolate}
+body.arcade-theme .result-hero:before{content:'';position:absolute;z-index:-1;inset:0 -10px 8px;border-radius:20px;background:repeating-conic-gradient(from -12deg at 50% 58%,#8494dd0a 0deg 15deg,transparent 15deg 30deg)}
+body.arcade-theme .result-hero.won:before{background:repeating-conic-gradient(from -12deg at 50% 58%,#ffd27413 0deg 15deg,transparent 15deg 30deg)}
+body.arcade-theme .result-medal{position:absolute;right:12px;top:48px;height:45px;width:45px;background:#263a59;border:2px solid #647da8;border-radius:10px;transform:rotate(12deg);color:#b6c8e6;box-shadow:0 4px 0 #050d1f;margin:0}body.arcade-theme .result-medal svg{width:28px}
+body.arcade-theme .won .result-medal{background:#f9ce79;color:#784448;border-color:#ffebb0;box-shadow:0 4px 0 #775144}
+body.arcade-theme .result-hero>.eyebrow{font-size:26px;font-weight:1000;letter-spacing:5px;color:#b8c9f0;text-shadow:2px 3px 0 #354660}body.arcade-theme .result-hero.won>.eyebrow{color:#ffdb86;text-shadow:2px 3px 0 #7e4653}
+body.arcade-theme .result-hero h1{font-size:26px;font-weight:950;letter-spacing:2px;margin:6px 0;color:#f0e8ff}body.arcade-theme .result-hero p{font-size:11px;color:#b8cce9}
+body.arcade-theme .result-character{width:174px;height:174px;margin:9px auto 4px;position:relative}
+body.arcade-theme .result-character:after{content:'';position:absolute;bottom:7px;left:10%;right:10%;height:17px;background:#7c91c933;border:1px solid #96aee24f;border-radius:50%;z-index:-1}
+body.arcade-theme .result-card{padding:17px}body.arcade-theme .result-stats{border:0;gap:6px;padding:0}
+body.arcade-theme .result-stats>div{border:1px solid #425f86;background:#101e35;border-radius:6px;padding:10px 2px}body.arcade-theme .result-stats strong{color:#ffdf95;font-size:27px}body.arcade-theme .result-stats span{color:#afc8e0;font-size:9px}
+body.arcade-theme .learning{border:1px solid #485f86;background:#14243e;border-radius:7px;padding:0;margin-top:15px}body.arcade-theme .learning summary{padding:11px 13px;color:#bcefe5;font-size:12px;font-weight:850;cursor:pointer}body.arcade-theme .learning>div{padding:0 13px 12px}body.arcade-theme .learning p{font-size:11px;color:#b6cbe6;line-height:1.7}body.arcade-theme .learning small{font-size:9px;color:#8fa6c9}body.arcade-theme .lesson-number{color:#f6d588;background:#263b5d}
+body.arcade-theme .leave-button{margin-top:13px;padding:5px;display:block;width:100%}
+body.arcade-theme.dialog-open{overflow:hidden}
+.game-dialog-backdrop{position:fixed;inset:0;z-index:100;display:grid;place-items:center;padding:22px;background:#04091cdd}
+.game-dialog{width:min(355px,100%);padding:26px 22px 22px;text-align:center;background:linear-gradient(145deg,#33466a,#1b2846);border:3px solid #a3b7df;border-bottom-width:7px;border-radius:16px;box-shadow:0 12px 0 #030719,0 0 0 5px #263a5655;color:#f2f5ff;position:relative}
+.game-dialog .dialog-emblem{display:grid;place-items:center;background:#453256;border:2px solid #b08bc9;color:#f4d3ff;border-radius:13px;width:62px;height:62px;margin:-56px auto 18px;transform:rotate(-6deg);box-shadow:0 4px 0 #12132c}
+.game-dialog.defense .dialog-emblem{background:#265166;color:#b8ffe9;border-color:#86d9d0}
+.dialog-kicker{font-size:9px;letter-spacing:2px;color:#a3bcdf;font-weight:800}.game-dialog h2{font-size:25px;letter-spacing:1px;margin:8px 0 12px;font-weight:950}.game-dialog p{color:#c1d0e8;font-size:13px;line-height:1.8;margin-bottom:20px}
+.game-dialog .dialog-actions{display:grid;gap:11px}.game-dialog .primary-button{margin:0;min-height:48px}.game-dialog .danger-button{border:2px solid #bb8c9b;background:#483047;color:#ffd4d0;border-radius:9px;box-shadow:0 3px 0 #21162d;min-height:43px;font-size:13px;font-weight:850}
+/* The laptop becomes the arcade's operations console, with the same status colors. */
+body.arcade-theme .host-shell{padding:25px 32px}body.arcade-theme .host-header{border-bottom:2px solid #4d5b85;padding-bottom:18px}body.arcade-theme .host-header .brand{font-size:21px}
+body.arcade-theme .host-badge{background:#24324b;border:1px solid #7992b3;color:#c6eee4;border-radius:4px;font-size:11px;letter-spacing:2px}
+body.arcade-theme .host-intro h1{font-size:35px;color:#ffdf92;letter-spacing:3px;text-shadow:2px 3px 0 #61445b;font-weight:950}
+body.arcade-theme .host-intro p{color:#a8bcdb}body.arcade-theme .host-counts{gap:10px}body.arcade-theme .host-counts>div{border:2px solid #4f6389;background:#172741;border-radius:10px;min-width:108px;padding:10px 17px;box-shadow:0 5px 0 #050c1d}
+body.arcade-theme .host-counts strong{color:#ffde92;font-size:32px}body.arcade-theme .host-counts span{font-size:10px;color:#adc3df;letter-spacing:1px}
+body.arcade-theme .host-card,body.arcade-theme .room-card,body.arcade-theme .stopped-card{background:linear-gradient(135deg,#203450,#15243b);border:2px solid #4e658b;border-top-color:#839ec4;border-radius:13px;box-shadow:0 5px 0 #030b1e}
+body.arcade-theme .host-card h2,body.arcade-theme .board-heading h2{font-weight:950;letter-spacing:1px;color:#d2f4ec}body.arcade-theme .host-qr{border:3px solid #9db8d0;border-radius:9px;background:#fffdf5;box-shadow:0 5px 0 #050c1b}
+body.arcade-theme .host-card>p,body.arcade-theme .host-footnote,body.arcade-theme .room-card-info,body.arcade-theme .join-url{color:#afc2dd}body.arcade-theme .host-mode-note{color:#a4b8d6;font-size:10px;line-height:1.5}
+body.arcade-theme .host-controls{border-color:#53688b}body.arcade-theme .host-control-row select{color:#ffdf9b;background:#172b46;border:2px solid #5a7093;border-radius:5px}body.arcade-theme .status-note{background:#122339;color:#b1c9de!important;border-color:#456889}
+body.arcade-theme .toggle{border:2px solid #597394;background:#283955;color:#c1d1e5;border-radius:6px;box-shadow:0 3px 0 #07111f;font-weight:850}body.arcade-theme .toggle.on{background:#245545;border-color:#78c4a6;color:#b6ffdd}
+body.arcade-theme .danger-button,body.arcade-theme .room-card-actions button[data-close]{background:#493049;border:2px solid #a57789;color:#ffd1cf;border-radius:7px;box-shadow:0 3px 0 #211829;font-size:11px}
+body.arcade-theme .room-card-top strong{color:#ffdc87;font-size:26px;font-weight:950;letter-spacing:4px}body.arcade-theme .room-card-names span:first-child{color:#edc0ff}body.arcade-theme .room-card-names span:last-child{color:#a4f6de}
+body.arcade-theme .room-card-actions button{border:1px solid #7085ab;background:#2c4162;color:#e5edff;font-weight:850;border-radius:5px;font-size:11px;box-shadow:0 3px 0 #0a1630}
+body.arcade-theme .room-card .meter{height:9px}body.arcade-theme .room-card-info{font-size:10px}body.arcade-theme .phase-pill{border-radius:4px;border:1px solid #667597;color:#cad6f0;background:#2b3856;font-size:9px;letter-spacing:1px}
+body.arcade-theme .phase-pill.playing{background:#275846;color:#c5ffe0;border-color:#6faa99}body.arcade-theme .phase-pill.paused,body.arcade-theme .phase-pill.countdown{color:#ffe7a1;background:#61512f;border-color:#bba56f}
+body.arcade-theme .empty-board{background:#172942;border:2px dashed #526e97;border-radius:12px}body.arcade-theme .empty-board h3{color:#f5d995}body.arcade-theme .empty-board p{color:#aec2dc}
+body.arcade-theme .projection.server-monitor{--monitor-ink:#eff5ff;--monitor-muted:#afc3e1;--monitor-line:#4a6288;background:#0b1730;background-image:radial-gradient(ellipse at 0 0,#493d792e,transparent 65%);color:#edf4ff}
+body.arcade-theme .monitor-header{border-bottom:2px solid #40577c;padding-bottom:17px}body.arcade-theme .monitor-header h1{font-weight:950;color:#ffe5a6;letter-spacing:1px}body.arcade-theme .monitor-brand-icon{background:#243f59;border:2px solid #79b5b7;border-radius:9px;box-shadow:0 4px 0 #060d23;color:#a4f5da}
+body.arcade-theme .monitor-panel,body.arcade-theme .monitor-kpis article,body.arcade-theme .monitor-ultimates article{background:#182b48;border:2px solid #476187;border-radius:10px;box-shadow:0 4px 0 #060d22}
+body.arcade-theme .monitor-status{background:linear-gradient(110deg,#223e50,#1a2c4b);border:2px solid #58848b;border-radius:12px;box-shadow:0 5px 0 #071022}
+body.arcade-theme .monitor-kpis strong{font-weight:950;color:#ffdfa0}body.arcade-theme .monitor-kpis strong.danger{color:#ffada3}body.arcade-theme .monitor-kpis strong.warn{color:#ffe095}
+body.arcade-theme .monitor-panel h2{font-weight:900;color:#c8f6ee}body.arcade-theme .monitor-node{border-width:2px;border-radius:8px}body.arcade-theme .monitor-exit{border:2px solid #a0bfd0;background:#31536b;color:#e4fffa;border-radius:8px;box-shadow:0 4px 0 #102235;font-weight:850}
+body.arcade-theme .monitor-attacker,body.arcade-theme .server-monitor .attack-color{color:#e2b3ff}body.arcade-theme .monitor-defender{color:#a4f6de}body.arcade-theme .monitor-protection>div{border-radius:5px}body.arcade-theme .monitor-footer{color:#9db4d4}
+body.arcade-theme .stopped-card{padding:38px 28px}body.arcade-theme .stopped-card svg{color:#8debd3}body.arcade-theme .stopped-card h1{color:#ffdc94;letter-spacing:2px}
+@keyframes arcade-hurry{50%{border-color:#ffe692;box-shadow:0 4px 0 #160e20,0 0 0 3px #f3867644}}
+@media(max-width:360px){body.arcade-theme .player-shell{padding-left:12px;padding-right:12px}body.arcade-theme .game-logo strong{font-size:54px}body.arcade-theme .game-mode>span{font-size:18px}body.arcade-theme .strategy-button b,body.arcade-theme .with-ultimate .strategy-button b{font-size:10px}body.arcade-theme .strategy-button small,body.arcade-theme .with-ultimate .strategy-button small{font-size:8px}body.arcade-theme .controls .section-label{font-size:9px}body.arcade-theme .controls .match-hint{font-size:9px}body.arcade-theme .battle-shell .intel-strip b{font-size:12px}body.arcade-theme .tap-counter,body.arcade-theme .tap-counter span{font-size:8px}body.arcade-theme .role-card .role-art{height:96px}body.arcade-theme .brand{font-size:10px}body.arcade-theme .preferences{gap:4px}}
+@media(max-height:740px) and (max-width:600px){body.arcade-theme .title-screen{padding-top:10px}body.arcade-theme .game-logo{margin-top:13px;font-size:24px}body.arcade-theme .game-logo strong{font-size:52px}body.arcade-theme .title-stage .arena{height:145px}body.arcade-theme .title-tag{margin:6px 0 15px;font-size:10px}body.arcade-theme .game-mode{min-height:62px;padding:10px 16px}body.arcade-theme .game-mode>span{font-size:18px}body.arcade-theme .menu-status{margin-top:14px}body.arcade-theme .selection-heading{margin:12px 0}body.arcade-theme .selection-heading h1{font-size:24px}body.arcade-theme .role-card .role-art{height:95px}body.arcade-theme .battle-top{margin-top:6px}body.arcade-theme .side-title{font-size:20px}body.arcade-theme .timer b{font-size:26px}body.arcade-theme .timer{padding:5px 8px}body.arcade-theme .battle-objective{margin:6px 0 8px;font-size:9px}body.arcade-theme .health-card{padding:9px 11px;gap:5px 12px}body.arcade-theme .battle-shell>.battle-arena{margin:10px -4px 7px}body.arcade-theme .battle-shell .intel-strip{margin-bottom:8px;padding:5px 8px}body.arcade-theme .controls{padding:9px 8px 8px}body.arcade-theme .controls .section-label{margin-bottom:7px}body.arcade-theme .strategy-button{min-height:72px;padding-top:6px;gap:3px}body.arcade-theme .tap-button{min-height:65px;padding:9px 13px;margin-top:10px}body.arcade-theme .tap-button>span{font-size:22px}body.arcade-theme .tap-counter{margin-top:9px}body.arcade-theme .result-character{width:150px;height:150px}}
+@media(max-height:620px) and (max-width:600px){body.arcade-theme .player-shell{padding-top:8px}body.arcade-theme .screen-home>.connection{display:none}body.arcade-theme .game-logo{font-size:20px;margin-top:10px}body.arcade-theme .game-logo strong{font-size:46px}body.arcade-theme .season-stamp{font-size:8px;padding:3px 10px}body.arcade-theme .title-stage .arena{height:119px}body.arcade-theme .title-tag{margin-bottom:12px;font-size:9px}body.arcade-theme .game-menu{gap:10px}body.arcade-theme .game-mode{min-height:55px}body.arcade-theme .party-button{min-height:39px}body.arcade-theme .menu-status{margin-top:13px}body.arcade-theme .screen-home .page-footer{display:none}body.arcade-theme .battle-shell .topbar{height:32px}body.arcade-theme .battle-top .eyebrow{display:none}body.arcade-theme .battle-objective{min-height:27px}body.arcade-theme .health-card{padding:8px 10px}body.arcade-theme .controls{padding:7px 7px 8px}body.arcade-theme .strategy-button{min-height:65px}body.arcade-theme .tap-button{min-height:58px;margin-top:8px}body.arcade-theme .battle-shell>.battle-arena{min-height:45px;margin-top:8px}body.arcade-theme .versus-names{height:16px;margin-bottom:5px;font-size:8px}body.arcade-theme .result-hero{padding-top:15px}}
+@media(max-width:680px){body.arcade-theme .host-shell{padding:18px}body.arcade-theme .host-intro h1{font-size:25px;letter-spacing:1px}body.arcade-theme .host-counts>div{min-width:68px;padding:8px}body.arcade-theme .host-counts strong{font-size:24px}body.arcade-theme .host-header .brand{font-size:16px}}
+@media(prefers-reduced-motion:reduce){body.arcade-theme .timer.urgent{animation:none}}
+
+@media(max-height:620px) and (max-width:600px){body.arcade-theme .ultimate-panel{height:36px;margin-bottom:7px}body.arcade-theme .ultimate-meter,body.arcade-theme .ultimate-panel .ultimate-button{height:36px}body.arcade-theme .battle-shell .strategy-button{min-height:58px;padding:4px 2px;gap:2px}body.arcade-theme .battle-shell .tap-button{padding:6px 10px}body.arcade-theme .battle-objective{min-height:24px;margin:3px 0 5px}body.arcade-theme .battle-shell .controls .section-label{margin-bottom:5px}}
+
+/* Host QR zoom keeps a full quiet zone and fits short projection screens. */
+body.arcade-theme button.host-qr{cursor:zoom-in;padding:12px}
+body.arcade-theme button.host-qr:disabled{cursor:default;opacity:1}
+.host-qr-placeholder>span{display:block;margin-top:10px}
+body.arcade-theme .host-card .qr-zoom-hint{text-align:center;color:#bcefe5;font-size:12px;margin:-8px 0 14px}
+.qr-dialog{width:min(690px,100%);max-height:calc(100dvh - 44px);overflow:auto;padding:20px}
+.qr-large-frame{width:min(560px,calc(100vw - 100px),calc(100dvh - 240px));min-width:100px;margin:0 auto 14px;background:#fffdf5;border-radius:8px;overflow:hidden;line-height:0}
+.qr-large-frame canvas{width:100%!important;height:auto!important;display:block}
+.qr-dialog p{margin-bottom:12px}.qr-dialog h2{font-size:24px}
