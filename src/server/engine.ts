@@ -31,7 +31,7 @@ export class Engine {
   private usedCodes = new Set<string>();
   accepting = true;
   allowSurrender = false;
-  private ultimateMode = false;
+  private ultimateMode = true;
   defaultDuration = 60;
   joinUrl = '';
   readonly capacity = 30;

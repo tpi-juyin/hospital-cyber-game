@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { build } from 'esbuild';
-import { Window, type HTMLButtonElement, type HTMLElement } from 'happy-dom';
+import { Window, type HTMLButtonElement, type HTMLAnchorElement, type HTMLElement } from 'happy-dom';
 import { Engine } from '../src/server/engine';
 import { GAME_VERSION } from '../src/shared/version';
 
@@ -9,7 +9,7 @@ test('host displays version, controls surrender and identifies a server that sti
   const compiled = await build({ entryPoints: ['src/client/host.ts'], bundle: true, write: false, format: 'iife', platform: 'browser', loader: { '.css': 'empty' } });
   const window = new Window({ url: 'http://127.0.0.1', settings: { enableJavaScriptEvaluation: true, suppressInsecureJavaScriptEnvironmentWarning: true } });
   t.after(() => window.happyDOM.close()); window.document.body.innerHTML = '<div id="app"></div>';
-  const game = new Engine(), player = game.connect(); game.action(player.id, { kind: 'create', mode: 'solo', role: 'attack', duration: 60 });
+  const game = new Engine(), player = game.connect(); game.setUltimateMode(false); game.action(player.id, { kind: 'create', mode: 'solo', role: 'attack', duration: 60 });
   const state = { lobby: game.lobby(), rooms: [game.playerView(player.id)!], uptimeSeconds: 0, tunnelStatus: '測試' };
   const sent: unknown[] = [], polls: (() => void)[] = [];
   let disconnected = false;
@@ -123,6 +123,9 @@ test('host QR zoom traps focus, closes by button/backdrop/Escape and withdraws s
   const dialog = () => window.document.querySelector('.qr-dialog');
   assert.equal(zoom.disabled, true); zoom.click(); assert.equal(dialog(), null);
   state.lobby.joinUrl = 'https://first-game.trycloudflare.com'; await poll();
+  const joinLink = window.document.querySelector<HTMLAnchorElement>('#join-url')!;
+  assert.equal(joinLink.getAttribute('href'), state.lobby.joinUrl); assert.equal(joinLink.target, '_blank');
+  assert.equal(joinLink.getAttribute('rel'), 'noopener noreferrer');
   zoom.focus(); zoom.click();
   assert.equal(app.inert, true);
   assert.equal(dialog()!.querySelector('canvas')!.getAttribute('data-url'), state.lobby.joinUrl);
@@ -136,7 +139,7 @@ test('host QR zoom traps focus, closes by button/backdrop/Escape and withdraws s
   zoom.click(); window.document.querySelector<HTMLElement>('.qr-dialog-backdrop')!.click(); assert.equal(dialog(), null);
   zoom.click(); state.lobby.joinUrl = 'https://second-game.trycloudflare.com'; await poll(); assert.equal(dialog(), null);
   zoom.click(); assert.equal(dialog()!.querySelector('canvas')!.getAttribute('data-url'), state.lobby.joinUrl);
-  state.lobby.joinUrl = ''; await poll(); assert.equal(dialog(), null); assert.equal(zoom.disabled, true);
+  state.lobby.joinUrl = ''; await poll(); assert.equal(dialog(), null); assert.equal(zoom.disabled, true); assert.equal(joinLink.hasAttribute('href'), false);
   state.lobby.joinUrl = 'https://second-game.trycloudflare.com'; await poll(); zoom.click(); offline = true; await poll();
   assert.equal(dialog(), null); assert.equal(zoom.disabled, true); assert.equal(app.inert, false);
 });
@@ -156,6 +159,7 @@ test('cloud host hides tunnel controls and keeps dashboard usable after ending a
   window.eval(compiled.outputFiles[0].text); await settle();
   assert.equal(window.document.querySelector<HTMLElement>('#rebuild-tunnel')!.hidden, true);
   assert.equal(window.document.querySelector<HTMLElement>('#cloud-logout')!.hidden, false);
+  assert.equal(window.document.querySelector<HTMLElement>('#tunnel-status')!.hidden, true);
   window.document.querySelector<HTMLButtonElement>('#stop')!.click();
   assert.match(window.document.querySelector('.game-dialog')!.textContent!, /網址保留/);
   window.document.querySelector<HTMLButtonElement>('[data-confirm]')!.click(); await settle();

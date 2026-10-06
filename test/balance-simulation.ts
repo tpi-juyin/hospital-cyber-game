@@ -3,6 +3,7 @@ import { Engine } from '../src/server/engine';
 /** Fixed-strategy duel with independent legal click cadences; no bot randomness. */
 export function simulateBalance(duration: number, attackRate: number, defenseRate: number, matched: boolean) {
   let now = 0; const engine = new Engine(() => now), attacker = engine.connect(), defender = engine.connect();
+  engine.setUltimateMode(false); // These scenarios measure the three base strategies.
   engine.action(attacker.id, { kind: 'create', mode: 'duo', role: 'attack', duration });
   engine.action(defender.id, { kind: 'join', code: engine.playerView(attacker.id)!.code });
   engine.action(attacker.id, { kind: 'ready', ready: true }); engine.action(defender.id, { kind: 'ready', ready: true });
@@ -25,6 +26,7 @@ export function simulateBalance(duration: number, attackRate: number, defenseRat
 /** Real attacking bot; a human defender either holds one strategy or reacts after 400 ms. */
 export function simulateSoloDefense(duration: number, defenseRate: number, reactive: boolean, rngValue = .25) {
   let now = 0; const engine = new Engine(() => now, () => rngValue), defender = engine.connect();
+  engine.setUltimateMode(false); // Ultimate counterplay has its own scenarios.
   engine.action(defender.id, { kind: 'create', mode: 'solo', role: 'defense', duration });
   engine.action(defender.id, { kind: 'ready', ready: true });
   now = 3000; engine.advance();

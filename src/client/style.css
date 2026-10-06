@@ -25,7 +25,7 @@
 .battle-effect svg{display:block;width:100%;height:100%;overflow:visible}
 .fx-projectile,.fx-guard{position:absolute;inset:0;display:block;transform-origin:50% 60%}
 .fx-projectile{animation:key-rocket .48s cubic-bezier(.2,.6,.45,1) both}
-.fx-attack-1 .fx-projectile{animation:fireball-rush .46s ease-in both}
+.fx-attack-1 .fx-projectile{animation:traffic-rush .46s ease-in both}
 .fx-attack-2 .fx-projectile{animation:bug-pounce .5s cubic-bezier(.3,.6,.5,1) both}
 .fx-trail{position:absolute;left:8px;top:30px;width:35px;height:12px;border-radius:50%;background:#ffc868;box-shadow:-10px -12px 0 -3px #ffb051,-19px 12px 0 -3px #ffd88b;animation:comet-tail .46s ease-in both}
 .fx-attack-1 .fx-trail{background:#f9824c;box-shadow:-12px -13px 0 -2px #ffbb45,-22px 14px 0 -2px #ffe67d}
@@ -48,7 +48,7 @@
 .battle-arena .attacker-art.casting{animation:hacker-cast .22s both}.battle-arena .defender-art.casting{animation:hospital-cast .22s both}
 @keyframes effect-life{0%,85%{opacity:1}100%{opacity:0}}
 @keyframes key-rocket{0%{transform:translate(0,8px) rotate(-35deg) scale(.55)}25%{transform:translate(calc(var(--travel)*.2),var(--lift)) rotate(5deg) scale(1.08)}75%{opacity:1}100%{transform:translate(var(--travel),6px) rotate(var(--turn)) scale(.65);opacity:0}}
-@keyframes fireball-rush{0%{transform:translate(-12px,8px) scale(.45,1)}20%{transform:translate(6px,var(--lift)) scale(1.2,.8)}72%{opacity:1}100%{transform:translate(var(--travel),4px) scale(.7,1.15);opacity:0}}
+@keyframes traffic-rush{0%{transform:translate(-12px,8px) scale(.45,1)}20%{transform:translate(6px,var(--lift)) scale(1.2,.8)}72%{opacity:1}100%{transform:translate(var(--travel),4px) scale(.7,1.15);opacity:0}}
 @keyframes bug-pounce{0%{transform:translate(0,8px) rotate(-24deg) scale(.55)}40%{transform:translate(calc(var(--travel)*.45),calc(var(--lift) - 10px)) rotate(30deg) scale(1.1)}75%{opacity:1}100%{transform:translate(var(--travel),7px) rotate(100deg) scale(.6);opacity:0}}
 @keyframes comet-tail{0%{transform:translateX(-10px) scaleX(.3);opacity:0}25%{opacity:.9}100%{transform:translateX(calc(var(--travel)*.85)) scaleX(1.8);opacity:0}}
 @keyframes comic-impact{0%{transform:translateX(var(--travel)) scale(.2) rotate(-20deg);opacity:0}25%{opacity:1}50%{transform:translateX(var(--travel)) scale(1.12) rotate(10deg);opacity:.85}100%{transform:translateX(var(--travel)) scale(1.25) rotate(20deg);opacity:0}}
@@ -136,3 +136,11 @@
 .reduced-motion .ultimate-button{animation:none!important}
 @media(prefers-reduced-motion:reduce){.ultimate-button{animation:none!important}}
 @media(max-width:360px){.with-ultimate .strategy-button b{font-size:11px}.with-ultimate .strategy-button small{font-size:8px}.tap-counter #ultimate-status{font-size:9px}}
+
+/* Traffic packets arrive in waves; rate limiting still admits a small flow. */
+.fx-attack-1 .traffic-wave{animation-delay:.12s;inset:8px 0 -8px 0}
+.fx-attack-1 .fx-trail{height:5px;border-radius:2px;box-shadow:-12px -15px 0 #ffbb45,-20px 16px 0 #f86953}
+.fx-defense-1 .rebound-packet{background:#f86953;border-color:#193246}
+.fx-defense-1 .rebound-packet.second{background:#ffbe63}
+.through-packet{position:absolute;z-index:1;left:-35px;top:48px;width:14px;height:11px;border:2px solid #193246;border-radius:3px;background:#a1e6d0;animation:packet-through .6s ease-in-out both}
+@keyframes packet-through{0%{transform:translateX(-12px);opacity:0}15%{opacity:1}55%{opacity:1;transform:translateX(76px)}100%{transform:translateX(112px);opacity:0}}

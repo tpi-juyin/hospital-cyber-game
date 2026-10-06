@@ -30,7 +30,8 @@ test('cloud serves protected host login, validates origin, and ends activity wit
   assert.equal((await fetch(url + '/host', { headers: { Cookie: cookie } })).headers.get('referrer-policy'), 'same-origin');
   const state = () => fetch(url + '/api/host/state', { headers: { Cookie: cookie } }).then(r => r.json());
   const action = (a: unknown, from = origin) => fetch(url + '/api/host/action', { method: 'POST', headers: { Cookie: cookie, Origin: from, 'Content-Type': 'application/json' }, body: JSON.stringify(a) });
-  assert.equal((await state()).hostingMode, 'cloud'); assert.equal((await state()).lobby.accepting, false);
+  assert.equal((await state()).hostingMode, 'cloud'); assert.equal((await state()).lobby.accepting, true);
+  assert.equal((await state()).lobby.ultimateMode, true);
   assert.equal((await state()).lobby.joinUrl, origin);
   assert.equal((await action({ kind: 'accepting', value: true }, 'https://evil.example')).status, 403);
   assert.equal((await action({ kind: 'accepting', value: true })).status, 200);
@@ -47,6 +48,7 @@ test('cloud serves protected host login, validates origin, and ends activity wit
   assert.equal((await state()).lobby.accepting, false); assert.equal((await fetch(url + '/api/health')).status, 200);
   assert.equal((await action({ kind: 'accepting', value: true })).status, 200);
   assert.throws(() => server.engine.connect(session.token));
+  assert.doesNotMatch((await state()).tunnelStatus, /活動已結束/);
   assert.equal((await fetch(url + '/host/logout', { method: 'POST', headers: { Cookie: cookie, Origin: origin }, redirect: 'manual' })).status, 303);
   assert.equal((await fetch(url + '/api/host/state', { headers: { Cookie: cookie } })).status, 401);
 });

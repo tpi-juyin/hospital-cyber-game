@@ -127,7 +127,8 @@ test('ultimate mode requires authenticated host access and fourth-move requests 
   const cookie = login.headers.get('set-cookie')!.split(';')[0];
   const post = (value: unknown, authenticated = true, origin = host) => fetch(host + '/api/host/action', { method: 'POST', headers: { ...(authenticated ? { Cookie: cookie } : {}), Origin: origin, 'Content-Type': 'application/json' }, body: JSON.stringify({ kind: 'ultimate-mode', value }) });
   assert.equal((await post(true, false)).status, 403); assert.equal((await post(true, true, 'https://elsewhere.example')).status, 403);
-  assert.equal((await post('true')).status, 400); assert.equal(server.engine.lobby().ultimateMode, false);
+  assert.equal((await post('true')).status, 400); assert.equal(server.engine.lobby().ultimateMode, true);
+  assert.equal((await post(false)).status, 200); assert.equal(server.engine.lobby().ultimateMode, false);
   const updated = new Promise<LobbyView>(resolve => { const watch = (l: LobbyView) => { if (l.ultimateMode) { client.socket.off('lobby', watch); resolve(l); } }; client.socket.on('lobby', watch); });
   assert.equal((await post(true)).status, 200); assert.equal((await updated).ultimateMode, true);
   await send(client.socket, { kind: 'create', mode: 'solo', role: 'attack', duration: 30 });

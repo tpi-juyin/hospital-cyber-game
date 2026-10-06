@@ -15,6 +15,8 @@ export function icon(name: string, size = 24) {
     copy: '<rect x="8" y="8" width="13" height="13" rx="2"/><path d="M16 8V3H3v13h5"/>',
     dice: '<rect x="3" y="3" width="18" height="18" rx="4"/><path d="M7 7h.01M17 7h.01M12 12h.01M7 17h.01M17 17h.01" stroke-width="3"/>',
     music: '<path d="M9 18V5l11-2v13M9 8l11-2"/><ellipse cx="6" cy="18" rx="3" ry="2"/><ellipse cx="17" cy="16" rx="3" ry="2"/>',
+    traffic: '<path d="M2 5h11m-3-3 3 3-3 3M2 12h11m-3-3 3 3-3 3M2 19h11m-3-3 3 3-3 3M17 3h5v18h-5"/>',
+    gate: '<path d="M9 21V3h11v18M9 6h11M14 7v5M2 16h15m-3-3 3 3-3 3"/><circle cx="5" cy="7" r="1"/>',
     filter: '<path d="M3 4h18l-7 8v7l-4 2v-9zM2 9h4m12 0h4"/>',
     patch: '<path d="m8 2 8 0 6 6v8l-6 6H8l-6-6V8zM12 7v10M7 12h10"/>',
     trophy: '<path d="M7 3h10v7a5 5 0 0 1-10 0zM7 5H3v3a4 4 0 0 0 4 4m10-7h4v3a4 4 0 0 1-4 4m-5 3v6m-4 0h8"/>',

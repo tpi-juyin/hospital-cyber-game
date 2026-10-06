@@ -18,8 +18,8 @@ export async function startServers(options: Options = {}) {
   const auth = cloud ? new CloudAuth(cloud.password) : null;
   const root = resolve(options.root || process.cwd()); const assets = resolve(root, 'dist');
   const engine = new Engine(); const key = randomBytes(32).toString('base64url');
-  if (cloud) { engine.joinUrl = cloud.origin; engine.accepting = false; }
-  const startup = performance.now(); let tunnelStatus = cloud ? '雲端入口已就緒；開放加入後即可開始活動。' : '正在建立公開連線…'; let closed = false;
+  if (cloud) engine.joinUrl = cloud.origin;
+  const startup = performance.now(); let tunnelStatus = cloud ? '雲端入口已就緒。' : '正在建立公開連線…'; let closed = false;
   let tunnelGeneration = 0, tunnelBusy = false, tunnelFailed = false, resumeAccepting: boolean | null = null;
   let rebuildTimeout: ReturnType<typeof setTimeout> | undefined;
   let hostPort = 0, playerPort = 0;
@@ -103,7 +103,10 @@ export async function startServers(options: Options = {}) {
           return json(res, 200, { ok: true });
         }
         if (a.kind === 'accepting' && (tunnelBusy || resumeAccepting !== null)) throw new GameError('BUSY', '請等公開連線恢復後再開放加入。');
-        if (a.kind === 'accepting' && typeof a.value === 'boolean') engine.accepting = a.value;
+        if (a.kind === 'accepting' && typeof a.value === 'boolean') {
+          engine.accepting = a.value;
+          if (cloud && a.value) tunnelStatus = '雲端入口已就緒。';
+        }
         else if (a.kind === 'allow-surrender' && typeof a.value === 'boolean') engine.allowSurrender = a.value;
         else if (a.kind === 'ultimate-mode' && typeof a.value === 'boolean') engine.setUltimateMode(a.value);
         else if (a.kind === 'duration') engine.setDuration(a.value);

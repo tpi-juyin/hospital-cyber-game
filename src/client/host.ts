@@ -5,6 +5,7 @@ import { icon, hospital, escape as esc } from './art';
 import './style.css';
 import './monitor.css';
 import './arcade.css';
+import './host-readable.css';
 import { GameDialog } from './game-dialog';
 import { QrDialog } from './qr-dialog';
 const hostDialog = new GameDialog(), qrDialog = new QrDialog();
@@ -15,7 +16,7 @@ document.body.classList.add('host-theme', 'arcade-theme');
 const phases = { waiting: '等待準備', countdown: '即將開戰', playing: '對戰中', paused: '等待重連', ended: '已結束' };
 let state: HostView | null = null, lastUrl = '', selected: string | null = null, stopped = false, stale = false, rebuildPending = false;
 const telemetry = new TelemetryHistory();
-app.innerHTML = `<main class="host-shell"><header class="host-header"><a class="brand" href="/">${icon('shield', 29)}<span class="brand-wordmark">CYBER<span class="brand-light"> CARE</span><small class="version-label" aria-label="遊戲版本 ${GAME_VERSION}">v${GAME_VERSION}</small></span></a><div class="host-header-actions"><span class="host-badge">遊戲指揮台</span><form id="cloud-logout" method="post" action="/host/logout" hidden><button class="secondary-button" type="submit">登出</button></form><button class="danger-button" id="stop">停止主持</button></div></header><div id="host-error" class="host-error" hidden></div><p id="version-warning" class="host-error" hidden>主持程式已更新，請停止主持並重新啟動，以套用新版功能。</p><section class="host-intro"><div><span class="eyebrow">HOSPITAL CYBER BATTLE</span><h1>戰場指揮中心</h1><p>玩家集結、開戰與觀戰，都從這裡出發。</p></div><div class="host-counts"><div><strong id="online">0</strong><span>玩家在線</span></div><div><strong id="playing">0</strong><span>進行中</span></div></div></section><div class="host-grid"><aside class="host-card"><h2>掃描，加入戰場</h2><p>手機使用 Wi-Fi 或行動網路皆可加入。<br>不需下載，也不需註冊。</p><button type="button" class="host-qr" id="zoom-qr" aria-label="放大加入遊戲的 QR Code" aria-haspopup="dialog" disabled><canvas id="qr" hidden></canvas><span class="host-qr-placeholder" id="qr-placeholder">${icon('shield', 36)}<span>正在準備加入入口…</span></span></button><p class="qr-zoom-hint">點擊 QR Code 放大</p><div class="join-url" id="join-url">等待公開網址</div><button class="secondary-button" id="copy-url" disabled>${icon('copy', 16)}複製加入網址</button><p class="status-note" id="tunnel-status" role="status" aria-live="polite"></p><button class="secondary-button" id="rebuild-tunnel" disabled>重建公開連線</button><p class="host-mode-note" id="rebuild-hint">中止目前對局、不計勝負，玩家需重新掃描加入。</p><div class="host-controls"><h2>活動設定</h2><div class="host-control-row"><label for="host-duration">新房間預設局長</label><select id="host-duration">${Array.from({ length: 19 }, (_, i) => 30 + i * 5).map(s => `<option value="${s}" ${s === 60 ? 'selected' : ''}>${s} 秒</option>`).join('')}</select></div><div class="host-control-row"><span>開放新玩家加入</span><button id="accepting" class="toggle on">開放中</button></div><div class="host-control-row"><span>大招模式 · 持續 5 秒</span><button id="ultimate-mode" class="toggle" aria-pressed="false" disabled>關閉</button></div><p class="host-mode-note">套用等待中的房間與下一局；已開打的對局維持原規則。</p><div class="host-control-row"><span>顯示玩家投降按鈕</span><button id="allow-surrender" class="toggle" aria-pressed="false" disabled>隱藏</button></div></div></aside><section><div class="board-heading"><h2>即時戰況</h2><span id="room-count">0 個房間</span></div><div id="rooms"></div><p class="host-footnote">每場對局獨立計算，不會互相影響。<br>請保持主持電腦開機與網路連線；停止主持會清除本次活動資料。</p></section></div></main><section id="projection" class="projection" hidden></section>`;
+app.innerHTML = `<main class="host-shell"><header class="host-header"><a class="brand" href="/">${icon('shield', 29)}<span class="brand-wordmark">CYBER<span class="brand-light"> CARE</span><small class="version-label" aria-label="遊戲版本 ${GAME_VERSION}">v${GAME_VERSION}</small></span></a><div class="host-header-actions"><span class="host-badge">遊戲指揮台</span><form id="cloud-logout" method="post" action="/host/logout" hidden><button class="secondary-button" type="submit">登出</button></form><button class="danger-button" id="stop">停止主持</button></div></header><div id="host-error" class="host-error" hidden></div><p id="version-warning" class="host-error" hidden>主持程式已更新，請停止主持並重新啟動，以套用新版功能。</p><section class="host-intro"><div><span class="eyebrow">HOSPITAL CYBER BATTLE</span><h1>戰場指揮中心</h1><p>玩家集結、開戰與觀戰，都從這裡出發。</p></div><div class="host-counts"><div><strong id="online">0</strong><span>玩家在線</span></div><div><strong id="playing">0</strong><span>進行中</span></div></div></section><div class="host-grid"><aside class="host-card"><h2>掃描，加入戰場</h2><p>手機使用 Wi-Fi 或行動網路皆可加入。<br>不需下載，也不需註冊。</p><button type="button" class="host-qr" id="zoom-qr" aria-label="放大加入遊戲的 QR Code" aria-haspopup="dialog" disabled><canvas id="qr" hidden></canvas><span class="host-qr-placeholder" id="qr-placeholder">${icon('shield', 36)}<span>正在準備加入入口…</span></span></button><p class="qr-zoom-hint">點擊 QR Code 放大</p><a class="join-url" id="join-url" target="_blank" rel="noopener noreferrer" aria-disabled="true">等待公開網址</a><button class="secondary-button" id="copy-url" disabled>${icon('copy', 16)}複製加入網址</button><p class="status-note" id="tunnel-status" role="status" aria-live="polite"></p><button class="secondary-button" id="rebuild-tunnel" disabled>重建公開連線</button><p class="host-mode-note" id="rebuild-hint">中止目前對局、不計勝負，玩家需重新掃描加入。</p><div class="host-controls"><h2>活動設定</h2><div class="host-control-row"><label for="host-duration">新房間預設局長</label><select id="host-duration">${Array.from({ length: 19 }, (_, i) => 30 + i * 5).map(s => `<option value="${s}" ${s === 60 ? 'selected' : ''}>${s} 秒</option>`).join('')}</select></div><div class="host-control-row"><span>開放新玩家加入</span><button id="accepting" class="toggle on">開放中</button></div><div class="host-control-row"><span>大招模式 · 持續 5 秒</span><button id="ultimate-mode" class="toggle" aria-pressed="false" disabled>關閉</button></div><p class="host-mode-note">套用等待中的房間與下一局；已開打的對局維持原規則。</p><div class="host-control-row"><span>顯示玩家投降按鈕</span><button id="allow-surrender" class="toggle" aria-pressed="false" disabled>隱藏</button></div></div></aside><section><div class="board-heading"><h2>即時戰況</h2><span id="room-count">0 個房間</span></div><div id="rooms"></div><p class="host-footnote">每場對局獨立計算，不會互相影響。<br>請保持主持電腦開機與網路連線；停止主持會清除本次活動資料。</p></section></div></main><section id="projection" class="projection" hidden></section>`;
 function error(message: string) { const el = document.querySelector<HTMLElement>('#host-error')!; el.hidden = !message; el.textContent = message; }
 async function action(data: unknown) {
   try { const response = await fetch('/api/host/action', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }); const result = await response.json(); if (!response.ok) throw new Error(result.error || '操作失敗。'); error(''); return true; } catch (e) { error(e instanceof Error ? e.message : '無法連線。'); return false; }
@@ -55,7 +56,9 @@ function render(s: HostView) {
   document.querySelector('#rebuild-hint')!.textContent = !s.tunnelControl?.available ? '此啟動方式不支援；請使用新版公開模式啟動檔。' : '中止目前對局、不計勝負，玩家需重新掃描加入。';
   document.querySelector<HTMLButtonElement>('#accepting')!.disabled = !!s.tunnelControl?.busy || !!s.tunnelControl?.failed;
   telemetry.update(s.rooms); document.querySelector('#online')!.textContent = String(s.lobby.online); document.querySelector('#playing')!.textContent = String(s.rooms.filter(r => ['playing', 'countdown', 'paused'].includes(r.phase)).length);
-  document.querySelector('#room-count')!.textContent = `${s.rooms.length} 個房間`; document.querySelector('#tunnel-status')!.textContent = s.tunnelStatus;
+  document.querySelector('#room-count')!.textContent = `${s.rooms.length} 個房間`;
+  const tunnelNote = document.querySelector<HTMLElement>('#tunnel-status')!;
+  tunnelNote.hidden = cloud; tunnelNote.textContent = cloud ? '' : s.tunnelStatus;
   const toggle = document.querySelector('#accepting')!; toggle.classList.toggle('on', s.lobby.accepting); toggle.textContent = s.lobby.accepting ? '開放中' : '暫停加入';
   const surrender = document.querySelector<HTMLButtonElement>('#allow-surrender')!;
   surrender.classList.toggle('on', !!s.lobby.allowSurrender); surrender.textContent = s.lobby.allowSurrender ? '顯示' : '隱藏'; surrender.setAttribute('aria-pressed', String(!!s.lobby.allowSurrender));
@@ -68,7 +71,11 @@ function render(s: HostView) {
   if (lastUrl !== s.lobby.joinUrl) {
     lastUrl = s.lobby.joinUrl; const canvas = document.querySelector<HTMLCanvasElement>('#qr')!; canvas.hidden = !lastUrl;
     document.querySelector<HTMLElement>('#qr-placeholder')!.hidden = !!lastUrl;
-    document.querySelector('#join-url')!.textContent = lastUrl || '公開入口暫時不可用';
+    const link = document.querySelector<HTMLAnchorElement>('#join-url')!;
+    link.textContent = lastUrl || '公開入口暫時不可用';
+    const usable = /^https?:\/\//.test(lastUrl);
+    if (usable) link.href = lastUrl; else link.removeAttribute('href');
+    link.setAttribute('aria-disabled', String(!usable));
     document.querySelector<HTMLButtonElement>('#copy-url')!.disabled = !lastUrl;
     if (lastUrl) void QRCode.toCanvas(canvas, lastUrl, { width: 232, margin: 1, errorCorrectionLevel: 'M', color: { dark: '#193246', light: '#fffdf5' } });
   }
@@ -108,7 +115,7 @@ document.querySelector('#stop')!.addEventListener('click', () => {
   void hostDialog.open({ title: '結束本次活動？', message: cloud ? '全部對局將中止且不計勝負，玩家與房間會清空。網址保留，可再次開放加入。' : '全部對局與公開入口將關閉，下次啟動會建立全新活動。', confirm: cloud ? '結束活動' : '停止主持', cancel: '繼續主持' }).then(async confirmed => {
     if (!confirmed || !await action({ kind: 'stop' })) return;
     qrDialog.close();
-    if (cloud) { error('活動已結束。按「開放新玩家加入」可開始下一場活動。'); return; }
+    if (cloud) return;
     stopped = true; app.innerHTML = `<div class="stopped-card">${icon('shield', 50)}<h1>活動已結束</h1><p>遊戲服務與公開通道正在關閉。<br>下次雙擊啟動檔，即可開始全新活動。</p></div>`;
   });
 });

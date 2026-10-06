@@ -245,3 +245,11 @@ test('equal speed with correct strategy survives; wrong strategy loses across du
     assert.equal(f.engine.playerView(f.a.id)!.winner, match ? 'defense' : 'attack');
   }
 });
+
+test('new activities accept players and enable ultimates by default, while host can disable both', () => {
+  const e = new Engine(); assert.equal(e.lobby().accepting, true); assert.equal(e.lobby().ultimateMode, true);
+  const p = e.connect(); e.action(p.id, { kind: 'create', mode: 'solo', role: 'attack', duration: 60 });
+  assert.equal(e.playerView(p.id)!.ultimateMode, true);
+  e.setUltimateMode(false); e.accepting = false;
+  assert.equal(e.playerView(p.id)!.ultimateMode, false); assert.throws(() => e.connect(), code('CLOSED'));
+});

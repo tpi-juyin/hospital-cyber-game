@@ -1,0 +1,47 @@
+/* Readable at laptop distance; scoped to the host so mobile play stays compact. */
+body.host-theme .host-shell{max-width:1500px}
+body.host-theme .host-grid{grid-template-columns:350px minmax(0,1fr);gap:28px}
+body.host-theme .host-header .brand{font-size:25px}
+body.host-theme .version-label{font-size:13px}
+body.host-theme .host-badge,body.host-theme .eyebrow{font-size:14px}
+body.host-theme .host-intro h1{font-size:40px}
+body.host-theme .host-intro p{font-size:17px}
+body.host-theme .host-counts strong{font-size:38px}
+body.host-theme .host-counts span{font-size:14px}
+body.host-theme .host-card h2,body.host-theme .board-heading h2{font-size:23px}
+body.host-theme .host-card>p,body.host-theme .host-qr-placeholder,body.host-theme .host-footnote{font-size:15px;line-height:1.8}
+body.host-theme .host-card .host-mode-note{font-size:14px}
+body.host-theme .host-card .qr-zoom-hint{font-size:15px}
+body.host-theme .join-url{display:block;font-size:15px;line-height:1.7;padding:10px 6px;border-radius:7px}
+body.host-theme .join-url[href]{color:#a4f6de;text-decoration:underline;text-underline-offset:4px;cursor:pointer}
+body.host-theme .join-url[href]:hover{background:#2c4162;color:#fff0b5}
+body.host-theme .join-url:focus-visible{outline:3px solid #ffdf92;outline-offset:3px}
+body.host-theme .status-note{font-size:14px!important}
+body.host-theme .host-control-row{font-size:16px;gap:12px;flex-wrap:wrap}
+body.host-theme .host-control-row select,body.host-theme .toggle{font-size:15px;min-height:40px}
+body.host-theme .secondary-button,body.host-theme .danger-button{font-size:16px;min-height:44px}
+body.host-theme .board-heading span{font-size:15px}
+body.host-theme .room-card-top strong{font-size:32px}
+body.host-theme .phase-pill{font-size:13px}
+body.host-theme .room-card-names{font-size:16px}
+body.host-theme .room-card-names b{font-size:14px}
+body.host-theme .room-card-info{font-size:14px;gap:8px;flex-wrap:wrap}
+body.host-theme .room-card-actions button,body.host-theme .room-card-actions button[data-close]{font-size:15px;min-height:42px}
+body.host-theme .empty-board h3{font-size:24px}
+body.host-theme .empty-board p,body.host-theme .host-error,body.host-theme .stopped-card p{font-size:16px}
+body.host-theme .stopped-card h1{font-size:30px}
+body.host-theme .game-dialog p{font-size:16px}
+body.host-theme .dialog-kicker{font-size:13px}
+body.host-theme .game-dialog button{font-size:17px}
+.monitor-panel-heading,.monitor-meta,.monitor-route,.monitor-legend{flex-wrap:wrap}
+.monitor-panel h2{white-space:normal}
+.monitor-players>span{flex-wrap:wrap}
+.monitor-protection>div{min-width:0}
+@media(max-width:1200px){body.host-theme .room-grid{grid-template-columns:1fr}.monitor-nodes{grid-template-columns:1fr}.monitor-header{flex-wrap:wrap}}
+@media(max-width:900px){body.host-theme .host-grid{grid-template-columns:1fr}.monitor-header-right{flex-wrap:wrap}.monitor-header-right,#monitor-round{gap:12px}}
+@media(max-width:680px){
+  body.host-theme .host-intro{flex-wrap:wrap}body.host-theme .host-intro h1{font-size:30px}
+  body.host-theme .host-header .brand{font-size:21px}body.host-theme .host-counts strong{font-size:30px}
+  .monitor-protection{grid-template-columns:1fr}.monitor-protection>div{justify-content:flex-start;padding:10px}
+  .monitor-ultimates{grid-template-columns:1fr}.monitor-meta{align-items:flex-start}
+}
