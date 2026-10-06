@@ -141,3 +141,9 @@ npm run package
 ## Render 雲端版（v1.13.0）
 
 使用固定 HTTPS 網址及 `/host` 密碼登入主持台，不需筆電持續執行或 Cloudflare 通道。服務啟動後預設暫停新玩家加入，主持人可開放加入、結束活動並再次開放。設定與操作見 [Render 部署說明](docs/RENDER.md)。現有可攜式 ZIP 維持 v1.11.2，本次未重製主持包。
+
+## 授權
+
+本專案原始碼、以 SVG／CSS 製作的遊戲圖像與動畫，以及 Web Audio 合成配樂與音效，採用 [MIT License](LICENSE)，著作權標示為 `2026 tpi-juyin`。使用、修改或散布時請保留授權與著作權聲明。
+
+第三方套件及隨主持包分發的 Node.js、cloudflared 仍依各自授權條款，詳見 [第三方授權清單](THIRD_PARTY_LICENSES.md)；主持包另附 `licenses/`。MIT 授權不取代這些第三方授權。

@@ -64,7 +64,7 @@ for (const target of targets) {
   await rm(out, { recursive: true, force: true });
   await mkdir(join(out, 'runtime'), { recursive: true }); await mkdir(join(out, 'licenses'), { recursive: true }); await mkdir(join(out, 'scripts'), { recursive: true });
   for (const folder of ['dist', 'dist-server', 'docs']) await cp(join(root, folder), join(out, folder), { recursive: true });
-  for (const file of ['README.md', 'THIRD_PARTY_LICENSES.md']) await cp(join(root, file), join(out, file));
+  for (const file of ['README.md', 'LICENSE', 'THIRD_PARTY_LICENSES.md']) await cp(join(root, file), join(out, file));
   await cp(join(root, 'scripts/launch.mjs'), join(out, 'scripts/launch.mjs'));
   await cp(join(root, 'scripts/tunnel-controller.mjs'), join(out, 'scripts/tunnel-controller.mjs'));
   await cp(join(root, 'scripts/open-host.mjs'), join(out, 'scripts/open-host.mjs'));
@@ -86,7 +86,7 @@ from pathlib import Path
 from zipfile import ZipFile, ZIP_DEFLATED
 import sys
 root, archive, launcher = Path(sys.argv[1]), sys.argv[2], sys.argv[3]
-entries = ['runtime','dist','dist-server','docs','scripts','licenses',launcher,'README.md','THIRD_PARTY_LICENSES.md','VERSION.json']
+entries = ['runtime','dist','dist-server','docs','scripts','licenses',launcher,'README.md','LICENSE','THIRD_PARTY_LICENSES.md','VERSION.json']
 with ZipFile(archive, 'w', ZIP_DEFLATED, compresslevel=6) as z:
     for entry in entries:
         item = root / entry
