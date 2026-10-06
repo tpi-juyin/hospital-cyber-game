@@ -55,6 +55,9 @@ export async function startServers(options: Options = {}) {
   });
   async function hostHandler(req: IncomingMessage, res: ServerResponse) {
     headers(res);
+    // Native login/logout POST forms need their same-origin Origin header.
+    // no-referrer makes browsers send Origin: null; keep cross-site referrers private.
+    if (cloud) res.setHeader('Referrer-Policy', 'same-origin');
     try {
       if (!cloud && req.headers.host !== `127.0.0.1:${hostPort}`) return json(res, 403, { error: '僅限本機主持入口。' });
       const url = new URL(req.url || '/', `http://127.0.0.1:${hostPort}`);
