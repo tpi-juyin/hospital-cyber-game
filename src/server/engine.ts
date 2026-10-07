@@ -10,12 +10,13 @@ const emptyStats = (): Stats => ({ taps: 0, damage: 0, blocked: 0, shieldAdded: 
 export class GameError extends Error { constructor(public code: string, message: string) { super(message); } }
 function insist(value: unknown, code: string, message: string): asserts value { if (!value) throw new GameError(code, message); }
 function validRole(value: unknown): asserts value is Role { insist(value === 'attack' || value === 'defense', 'INVALID', '請選擇有效陣營。'); }
-function validDuration(value: unknown): asserts value is number { insist(typeof value === 'number' && Number.isInteger(value) && value >= 30 && value <= 120 && value % 5 === 0, 'INVALID', '局長需為 30～120 秒，間隔 5 秒。'); }
+function validDuration(value: unknown): asserts value is number { insist(typeof value === 'number' && Number.isInteger(value) && value >= 30 && value <= 120 && value % 5 === 0, 'INVALID', '對戰時間需為 30～120 秒，間隔 5 秒。'); }
 interface Player {
   id: string; token: string; name: string; bot: boolean; connected: boolean; disconnectedAt: number;
   roomId: string | null; role: Role; ready: boolean; strategy: Strategy; switchAt: number;
   lastSeq: number; tapTimes: number[]; stats: Stats; nextTap: number; nextSwitch: number;
   charge: number; ultimateUntil: number; ultimateUses: number;
+  lessonBags: Record<string, number[]>;
 }
 interface Room {
   id: string; code: string; ownerId: string; mode: 'solo' | 'duo'; duration: number; phase: Phase;
@@ -41,7 +42,7 @@ export class Engine {
   private requireRoom(p: Player) { const r = p.roomId ? this.rooms.get(p.roomId) : null; insist(r, 'NO_ROOM', '請先加入房間。'); return r; }
   private resetPlayer(p: Player) { p.ready = p.bot; p.strategy = 0; p.switchAt = 0; p.tapTimes = []; p.stats = emptyStats(); p.nextTap = 0; p.nextSwitch = 0; p.charge = 0; p.ultimateUntil = 0; p.ultimateUses = 0; }
   private makePlayer(bot = false): Player {
-    return { id: uid(), token: bot ? '' : uid(), name: bot ? '電腦隊友' : '新玩家', bot, connected: true, disconnectedAt: 0, roomId: null, role: 'attack', ready: bot, strategy: 0, switchAt: 0, lastSeq: 0, tapTimes: [], stats: emptyStats(), nextTap: 0, nextSwitch: 0, charge: 0, ultimateUntil: 0, ultimateUses: 0 };
+    return { id: uid(), token: bot ? '' : uid(), name: bot ? '電腦隊友' : '新玩家', bot, connected: true, disconnectedAt: 0, roomId: null, role: 'attack', ready: bot, strategy: 0, switchAt: 0, lastSeq: 0, tapTimes: [], stats: emptyStats(), nextTap: 0, nextSwitch: 0, charge: 0, ultimateUntil: 0, ultimateUses: 0, lessonBags: {} };
   }
   connect(token?: string): SessionView {
     this.advance();
@@ -130,7 +131,7 @@ export class Engine {
       p.role = a.role;
       for (const id of r.members) { const member = this.requirePlayer(id); if (member.bot) { member.role = opposite(p.role); member.name = member.role === 'attack' ? '電腦駭客' : '電腦守護者'; } member.ready = member.bot; }
     } else if (a.kind === 'duration') {
-      insist(p.id === r.ownerId, 'FORBIDDEN', '只有房主可以調整局長。'); validDuration(a.duration); r.duration = a.duration;
+      insist(p.id === r.ownerId, 'FORBIDDEN', '只有房主可以調整對戰時間。'); validDuration(a.duration); r.duration = a.duration;
       for (const id of r.members) { const member = this.requirePlayer(id); member.ready = member.bot; }
     } else if (a.kind === 'ready') {
       insist(typeof a.ready === 'boolean', 'INVALID', '無效準備狀態。');
@@ -155,7 +156,7 @@ export class Engine {
   }
   private validateImmediateStart(mode: 'solo' | 'duo', enabled: unknown) {
     insist(enabled === undefined || typeof enabled === 'boolean', 'INVALID', '無效開局設定。');
-    insist(!enabled || mode === 'solo', 'INVALID', '雙人對局需雙方選好陣營並準備。');
+    insist(!enabled || mode === 'solo', 'INVALID', '雙人對戰需雙方選好陣營並準備。');
   }
   private startSolo(r: Room) {
     for (const id of r.members) this.requirePlayer(id).ready = true;
@@ -166,7 +167,7 @@ export class Engine {
     insist((typeof a.roomId === 'string' && a.roomId.length < 64) || (typeof a.code === 'string' && /^[1-9][0-9]{3}$/.test(a.code)), 'INVALID', '請輸入 4 位數房號。');
     const r = a.roomId ? this.rooms.get(a.roomId) : [...this.rooms.values()].find(r => r.code === a.code);
     insist(r, 'NOT_FOUND', '找不到這個房間，請確認房號。');
-    insist(r.phase !== 'ended', 'ENDED', '這個房間的對局已結束。');
+    insist(r.phase !== 'ended', 'ENDED', '這個房間的對戰已結束。');
     insist(r.mode === 'duo' && r.members.length < 2, 'FULL', '這個房間已滿。');
     insist(r.phase === 'waiting', 'STARTED', '這個房間已經開局。');
     const owner = this.requirePlayer(r.members[0]); this.resetPlayer(p); p.role = opposite(owner.role); p.roomId = r.id; r.members.push(p.id); owner.ready = false; r.touchedAt = this.now();
@@ -189,7 +190,7 @@ export class Engine {
     for (const id of r.members) { const p = this.requirePlayer(id); p.roomId = null; p.ready = false; if (p.bot) this.players.delete(id); }
     this.rooms.delete(id);
   }
-  abortForTunnelRebuild(reason = '主持人正在重建公開連線，本局不計勝負。請重新掃描主持台 QR Code。') {
+  abortForTunnelRebuild(reason = '主持人正在重建公開連線，本局不計勝負。請重新掃描指揮中心 QR Code。') {
     for (const r of this.rooms.values()) if (r.phase !== 'ended') this.end(r, null, reason);
   }
   clearParticipants() {
@@ -241,7 +242,17 @@ export class Engine {
       // Prefer the selected strategy for ties, including rounds without any taps.
       return p.stats.byStrategy[p.strategy] === mostTaps ? p.strategy : p.stats.byStrategy.indexOf(mostTaps);
     };
-    r.lessons = [STRATEGIES[dominant(attacker)].attackTip, STRATEGIES[dominant(defender)].defenseTip];
+    // The owner's session keeps topic bags across rematches and newly created rooms.
+    // Draw once for the whole room, so both players and reconnects see the same pair.
+    const owner = this.requirePlayer(r.ownerId);
+    const pick = (role: Role, strategy: number) => {
+      const tips = role === 'attack' ? STRATEGIES[strategy].attackTips : STRATEGIES[strategy].defenseTips;
+      const key = `${role}:${strategy}`;
+      const bag = owner.lessonBags[key]?.length ? owner.lessonBags[key] : (owner.lessonBags[key] = tips.map((_, index) => index));
+      const index = bag.splice(bag.length === 1 ? 0 : Math.floor(this.rng() * bag.length), 1)[0];
+      return tips[index];
+    };
+    r.lessons = [pick('attack', dominant(attacker)), pick('defense', dominant(defender))];
   }
   advance() {
     const now = this.now();

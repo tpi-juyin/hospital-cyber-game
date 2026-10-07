@@ -213,12 +213,12 @@ test('battle and result screens keep damage visible, and each completed round si
     state.hp = 50; callbacks.room(state);
     assert.equal(window.document.querySelectorAll('.server-machine.is-down').length, 1);
     state.hp = 0; state.phase = 'ended'; state.winner = 'attack';
-    state.lessons = [STRATEGIES[2].attackTip, STRATEGIES[1].defenseTip]; callbacks.room(state);
+    state.lessons = [STRATEGIES[2].attackTips[0], STRATEGIES[1].defenseTips[0]]; callbacks.room(state);
     const learning = window.document.querySelector('details.learning')!;
     assert.ok(learning.hasAttribute('open'), 'result knowledge is expanded by default for either role');
     assert.equal(learning.querySelectorAll('p').length, 2);
-    assert.ok(learning.textContent.includes(STRATEGIES[2].attackTip));
-    assert.ok(learning.textContent.includes(STRATEGIES[1].defenseTip));
+    assert.ok(learning.textContent.includes(STRATEGIES[2].attackTips[0]));
+    assert.ok(learning.textContent.includes(STRATEGIES[1].defenseTips[0]));
     assert.equal(window.document.querySelectorAll('.result-character .server-machine.is-down').length, role === 'defense' ? 2 : 0);
     assert.deepEqual([...fixture.testAudio.outcomes], [role === 'attack']);
     callbacks.room(state);
@@ -479,7 +479,7 @@ test('invitations open the nickname page directly without a code field and send 
 });
 
 test('failed invitations retain the nickname and retry button, including closed admission and reconnect', async t => {
-  for (const message of ['這個房間已滿。', '找不到這個房間，請確認房號。', '這個房間的對局已結束。']) {
+  for (const message of ['這個房間已滿。', '找不到這個房間，請確認房號。', '這個房間的對戰已結束。']) {
     const window = new Window({ url: 'https://game.example/?room=invalid-room-id', settings: { enableJavaScriptEvaluation: true, suppressInsecureJavaScriptEnvironmentWarning: true } });
     t.after(() => window.happyDOM.close()); window.document.body.innerHTML = '<div id="app"></div>';
     window.eval((await compiled).outputFiles[0].text);

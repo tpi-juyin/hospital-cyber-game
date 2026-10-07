@@ -22,7 +22,7 @@ function log(message) { const line = `[${new Date().toISOString()}] ${message}`;
 function send(status, url = '', generation = 0, phase) { if (game?.connected) game.send({ type: 'tunnel', status, url, generation, phase }, () => {}); }
 function isAlive(pid) { try { process.kill(pid, 0); return true; } catch { return false; } }
 if (existsSync(instancePath)) {
-  try { const old = JSON.parse(readFileSync(instancePath, 'utf8')); if (isAlive(old.pid)) { console.error('已有遊戲正在主持，請先停止原活動。'); console.log(`主持入口：${old.hostUrl}`); process.exit(1); } } catch { /* Stale metadata can be replaced. */ }
+  try { const old = JSON.parse(readFileSync(instancePath, 'utf8')); if (isAlive(old.pid)) { console.error('已有遊戲正在主持，請先停止原活動。'); console.log(`指揮中心入口：${old.hostUrl}`); process.exit(1); } } catch { /* Stale metadata can be replaced. */ }
 }
 if (!existsSync(join(root, 'dist-server', 'game.cjs')) || !existsSync(join(root, 'dist', 'index.html'))) {
   log('找不到完整遊戲檔案。原始碼版本請先執行 npm run build；主持包請完整解壓縮。'); process.exit(1);
@@ -52,7 +52,7 @@ const tunnelController = createTunnelController({
   terminate, health, publish: send, log, record: text => appendFileSync(logPath, text),
 });
 log('醫院資安攻防戰 · 正在啟動');
-log('請保持這個視窗開啟。結束時使用主持頁「停止主持」，或按 Ctrl+C。');
+log('請保持這個視窗開啟。結束時使用指揮中心「結束活動並停止服務」，或按 Ctrl+C。');
 game = fork(join(root, 'dist-server', 'game.cjs'), [], { execPath: node, cwd: root, env: { ...process.env, HOSPITAL_GAME_CHILD: '1', HOSPITAL_GAME_ROOT: root, HOSPITAL_GAME_LOCAL_ONLY: localOnly ? '1' : '0' }, stdio: ['ignore', 'pipe', 'pipe', 'ipc'], windowsHide: true });
 game.stdout.on('data', chunk => log(chunk.toString().trim())); game.stderr.on('data', chunk => log(chunk.toString().trim()));
 game.on('error', error => { log(`遊戲無法啟動：${error.message}`); void shutdown(1); });
@@ -63,7 +63,7 @@ game.on('message', message => {
   if (message?.type !== 'ready' || stopping || playerUrl) return;
   playerUrl = message.playerUrl;
   // The local host credential is intentionally excluded from the diagnostic log.
-  console.log(`\n主持頁網址（僅限這台電腦，請勿分享）：\n${message.hostUrl}\n`);
+  console.log(`\n指揮中心網址（僅限這台電腦，請勿分享）：\n${message.hostUrl}\n`);
   writeFileSync(instancePath, JSON.stringify({ pid: process.pid, gamePid: game.pid, runId, hostUrl: message.hostUrl, playerUrl }, null, 2), { mode: 0o600 });
   if (autoOpen) openHostPage(message.hostUrl, { log });
   if (localOnly) { send('本機測試模式：此網址與 QR Code 僅適用這台電腦。', playerUrl); log(`本機玩家入口：${playerUrl}`); }

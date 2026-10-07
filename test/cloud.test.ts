@@ -13,7 +13,7 @@ test('cloud serves protected host login, validates origin, and ends activity wit
   assert.equal((await fetch(url + '/api/health')).status, 200);
   const loginPage = await fetch(url + '/host');
   assert.equal(loginPage.headers.get('referrer-policy'), 'same-origin');
-  assert.match(await loginPage.text(), /主持台登入/);
+  assert.match(await loginPage.text(), /指揮中心登入/);
   assert.equal((await fetch(url + '/api/host/state')).status, 401);
   assert.equal((await fetch(url + '/host.html')).status, 404);
   const login = (value: string, from = origin) => fetch(url + '/host/login', { method: 'POST', headers: { Origin: from }, body: new URLSearchParams({ password: value }), redirect: 'manual' });

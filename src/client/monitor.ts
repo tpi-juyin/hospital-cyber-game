@@ -44,18 +44,18 @@ export class ServerMonitor {
     this.root.classList.add('server-monitor');
     this.root.setAttribute('role', 'dialog'); this.root.setAttribute('aria-modal', 'true'); this.root.setAttribute('aria-labelledby', 'monitor-title');
     this.root.innerHTML = `<div class="monitor-wrap">
-      <header class="monitor-header"><div class="monitor-brand"><span class="monitor-brand-icon">${icon('shield', 29)}</span><div><span class="monitor-eyebrow">CYBER CARE / OPERATIONS</span><h1 id="monitor-title">醫院伺服器監控台 <small class="projection-version">v${GAME_VERSION}</small></h1></div></div><div class="monitor-header-right"><div id="monitor-round"></div><button class="monitor-exit" data-exit>返回總覽 ${icon('close', 18)}</button></div></header>
+      <header class="monitor-header"><div class="monitor-brand"><span class="monitor-brand-icon">${icon('shield', 29)}</span><div><span class="monitor-eyebrow">CYBER CARE / OPERATIONS</span><h1 id="monitor-title">戰況儀表板 <small class="projection-version">v${GAME_VERSION}</small></h1></div></div><div class="monitor-header-right"><div id="monitor-round"></div><button class="monitor-exit" data-exit>返回指揮中心 ${icon('close', 18)}</button></div></header>
       <div class="monitor-meta"><span>演練模擬 · 非真實醫療監控</span><span id="monitor-feed" role="status"></span></div>
       <div id="monitor-stale" class="monitor-stale" role="status" hidden>監控連線中斷 · 畫面保留最後資料，尚未確認目前戰況。</div>
       <section id="monitor-status" class="monitor-status"></section>
-      <section id="monitor-ultimates" class="monitor-ultimates" aria-label="雙方大招狀態"></section><section id="monitor-kpis" class="monitor-kpis" aria-label="對局即時指標"></section>
+      <section id="monitor-ultimates" class="monitor-ultimates" aria-label="雙方大招狀態"></section><section id="monitor-kpis" class="monitor-kpis" aria-label="對戰即時指標"></section>
       <div class="monitor-grid">
         <section class="monitor-panel"><div class="monitor-panel-heading"><h2>雙機運作狀態</h2><span>CPU / 記憶體為模擬值</span></div><div id="monitor-route" class="monitor-route"></div><div id="monitor-nodes" class="monitor-nodes"></div></section>
         <section class="monitor-panel"><div class="monitor-panel-heading"><h2>攻擊與攔截趨勢</h2><span class="monitor-legend"><i></i>攻擊 <i></i>防護攔截</span></div><div id="monitor-trend"></div><p class="monitor-caption">次／秒 · 近 2 秒平均 · 攔截含部分吸收 · 暫停／結算凍結</p><div id="monitor-protection" class="monitor-protection"></div></section>
         <section class="monitor-panel monitor-services"><div class="monitor-panel-heading"><h2>醫療服務狀態</h2><span>回應時間為模擬值</span></div><div id="monitor-services"></div></section>
         <section class="monitor-panel"><div class="monitor-panel-heading"><h2>戰況事件</h2><span>本局遊戲時間 · 最新在上</span></div><ol id="monitor-events" class="monitor-events"></ol></section>
       </div>
-      <footer class="monitor-footer">血量、護盾與攻防次數來自對局；主備切換、負載與服務回應用於教學模擬。三項基礎防護持續啟用，策略代表加強重點。</footer>
+      <footer class="monitor-footer">血量、護盾與攻防次數來自對戰；主備切換、負載與服務回應用於教學模擬。三項基礎防護持續啟用，策略代表加強重點。</footer>
     </div>`;
   }
   connection(stale: boolean) {

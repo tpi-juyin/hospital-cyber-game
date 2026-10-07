@@ -59,7 +59,7 @@ export async function startServers(options: Options = {}) {
     // no-referrer makes browsers send Origin: null; keep cross-site referrers private.
     if (cloud) res.setHeader('Referrer-Policy', 'same-origin');
     try {
-      if (!cloud && req.headers.host !== `127.0.0.1:${hostPort}`) return json(res, 403, { error: '僅限本機主持入口。' });
+      if (!cloud && req.headers.host !== `127.0.0.1:${hostPort}`) return json(res, 403, { error: '僅限本機指揮中心入口。' });
       const url = new URL(req.url || '/', `http://127.0.0.1:${hostPort}`);
       if (cloud && auth) {
         if (req.method === 'POST' && req.headers.origin !== cloud.origin) return json(res, 403, { error: '無效操作來源。' });
@@ -73,7 +73,7 @@ export async function startServers(options: Options = {}) {
         if (req.method === 'POST' && url.pathname === '/host/logout') { auth.logout(req, res); res.writeHead(303, { Location: '/host' }); res.end(); return; }
         if (!auth.authorized(req)) {
           if (req.method === 'GET' && (url.pathname === '/host' || url.pathname === '/host/')) { res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' }); res.end(loginPage()); return; }
-          return json(res, 401, { error: '請重新登入主持台。' });
+          return json(res, 401, { error: '請重新登入指揮中心。' });
         }
         if (url.pathname === '/host' || url.pathname === '/host/') url.pathname = '/host.html';
       }
@@ -81,7 +81,7 @@ export async function startServers(options: Options = {}) {
         res.writeHead(303, { Location: '/', 'Set-Cookie': `hospital_host=${key}; HttpOnly; SameSite=Strict; Path=/`, 'Cache-Control': 'no-store' }); return res.end();
       }
       const cookie = (req.headers.cookie || '').split(';').map(s => s.trim()).find(s => s.startsWith('hospital_host='))?.slice(14) || '';
-      if (!cloud && !secureEqual(cookie, key)) return json(res, 403, { error: '請使用啟動器顯示的主持頁連結。' });
+      if (!cloud && !secureEqual(cookie, key)) return json(res, 403, { error: '請使用啟動器顯示的指揮中心連結。' });
       if (url.pathname === '/api/host/state' && req.method === 'GET') return json(res, 200, { lobby: engine.lobby(), rooms: [...engine.rooms.keys()].map(id => engine.view(id)), hostingMode: cloud ? 'cloud' : 'local', uptimeSeconds: Math.floor((performance.now() - startup) / 1000), tunnelStatus, tunnelControl: { available: !!options.onRebuildTunnel, busy: tunnelBusy, failed: tunnelFailed } });
       if (req.method === 'POST' && url.pathname === '/api/host/action') {
         if (req.headers.origin !== (cloud?.origin || `http://127.0.0.1:${hostPort}`)) return json(res, 403, { error: '無效操作來源。' });
@@ -91,7 +91,7 @@ export async function startServers(options: Options = {}) {
           if (tunnelBusy) throw new GameError('BUSY', '公開連線正在重建，請稍候。');
           tunnelBusy = true; tunnelFailed = false; const generation = ++tunnelGeneration;
           resumeAccepting ??= engine.accepting;
-          engine.accepting = false; engine.joinUrl = ''; tunnelStatus = '正在重建公開連線…目前對局已中止，請等待新的 QR Code。';
+          engine.accepting = false; engine.joinUrl = ''; tunnelStatus = '正在重建公開連線…目前對戰已中止，請等待新的 QR Code。';
           engine.abortForTunnelRebuild();
           for (const [id, socketId] of sessions) io.sockets.sockets.get(socketId)?.emit('room', engine.playerView(id));
           io.emit('hosting-reset'); sessions.clear(); io.disconnectSockets(true); limits.clear(); engine.clearParticipants();

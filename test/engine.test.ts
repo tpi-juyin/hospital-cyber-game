@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import { Engine, GameError } from '../src/server/engine';
 import { STRATEGIES, type Role } from '../src/shared/protocol';
 
-function fixture(duration = 60) {
-  let now = 0; const engine = new Engine(() => now, () => .25);
+function fixture(duration = 60, rng: () => number = () => .25) {
+  let now = 0; const engine = new Engine(() => now, rng);
   const a = engine.connect(), d = engine.connect();
   engine.action(a.id, { kind: 'create', mode: 'duo', role: 'attack', duration });
   const waiting = engine.playerView(a.id)!; engine.action(d.id, { kind: 'join', code: waiting.code });
@@ -20,7 +20,7 @@ test('round lessons follow both sides independently, including mismatched defens
     f.advance(60000);
     const ended = f.engine.playerView(f.a.id)!;
     assert.equal(ended.phase, 'ended');
-    assert.deepEqual(ended.lessons, [STRATEGIES[attack].attackTip, STRATEGIES[defense].defenseTip]);
+    assert.deepEqual(ended.lessons, [STRATEGIES[attack].attackTips[0], STRATEGIES[defense].defenseTips[0]]);
     assert.deepEqual(f.engine.playerView(f.d.id)!.lessons, ended.lessons);
   }
 });
@@ -33,11 +33,11 @@ test('lessons use the most frequent effective strategy, ignore rejected taps and
   f.tap(f.a.id, 5); f.tap(f.d.id, 5);
   for (let i = 0; i < 3; i++) assert.throws(() => f.tap(f.a.id, 5), code('STALE_INPUT'));
   f.advance(60000);
-  assert.deepEqual(f.engine.playerView(f.a.id)!.lessons, [STRATEGIES[2].attackTip, STRATEGIES[1].defenseTip]);
+  assert.deepEqual(f.engine.playerView(f.a.id)!.lessons, [STRATEGIES[2].attackTips[0], STRATEGIES[1].defenseTips[0]]);
   f.engine.action(f.a.id, { kind: 'rematch' });
   assert.deepEqual(f.engine.playerView(f.a.id)!.lessons, []);
   f.start(); f.advance(60000);
-  assert.deepEqual(f.engine.playerView(f.a.id)!.lessons, [STRATEGIES[0].attackTip, STRATEGIES[0].defenseTip]);
+  assert.deepEqual(f.engine.playerView(f.a.id)!.lessons, [STRATEGIES[0].attackTips[0], STRATEGIES[0].defenseTips[0]]);
 });
 test('lessons prefer the selected strategy for ties and rounds without taps, even without a winner', () => {
   for (const tiedTaps of [false, true]) {
@@ -48,7 +48,7 @@ test('lessons prefer the selected strategy for ties and rounds without taps, eve
     f.engine.disconnect(f.d.id); f.advance(10000);
     const ended = f.engine.playerView(f.a.id)!;
     assert.equal(ended.winner, null);
-    assert.deepEqual(ended.lessons, [STRATEGIES[2].attackTip, STRATEGIES[1].defenseTip]);
+    assert.deepEqual(ended.lessons, [STRATEGIES[2].attackTips[0], STRATEGIES[1].defenseTips[0]]);
   }
 });
 test('surrender defaults off, requires an active round and remains host-controlled', () => {
@@ -252,4 +252,54 @@ test('new activities accept players and enable ultimates by default, while host 
   assert.equal(e.playerView(p.id)!.ultimateMode, true);
   e.setUltimateMode(false); e.accepting = false;
   assert.equal(e.playerView(p.id)!.ultimateMode, false); assert.throws(() => e.connect(), code('CLOSED'));
+});
+
+test('topic bags draw both variants before refill and remain stable on reconnect', () => {
+  for (const attack of [0, 1, 2]) for (const defense of [0, 1, 2]) {
+    for (const first of [0, .499999, .5, .999999]) for (const second of [0, .999999]) {
+      let calls = 0;
+      const attackIndex = Math.floor(first * 2), defenseIndex = Math.floor(second * 2);
+      const draws = [first, second, attackIndex === 0 ? .75 : .25, defenseIndex === 0 ? .75 : .25];
+      const f = fixture(30, () => { assert.ok(calls < draws.length, 'no extra draw outside settlement'); return draws[calls++]; });
+      f.start(); f.switch(f.a.id, 1, attack); f.switch(f.d.id, 1, defense); f.advance(30000);
+      const expected = [STRATEGIES[attack].attackTips[attackIndex], STRATEGIES[defense].defenseTips[defenseIndex]];
+      assert.deepEqual(f.engine.playerView(f.a.id)!.lessons, expected);
+      assert.deepEqual(f.engine.playerView(f.d.id)!.lessons, expected);
+      f.engine.disconnect(f.a.id); f.engine.connect(f.a.token); f.advance(1000);
+      assert.deepEqual(f.engine.playerView(f.a.id)!.lessons, expected);
+      assert.equal(calls, 2, 'reconnect and polling do not redraw');
+      f.engine.action(f.a.id, { kind: 'rematch' });
+      assert.deepEqual(f.engine.playerView(f.a.id)!.lessons, []);
+      f.start(); f.switch(f.a.id, 2, attack); f.switch(f.d.id, 2, defense); f.advance(30000);
+      assert.deepEqual(f.engine.playerView(f.a.id)!.lessons, [STRATEGIES[attack].attackTips[1 - attackIndex], STRATEGIES[defense].defenseTips[1 - defenseIndex]]);
+      assert.equal(calls, 2, 'remaining tips are used without drawing again');
+      f.engine.action(f.a.id, { kind: 'rematch' });
+      f.start(); f.switch(f.a.id, 3, attack); f.switch(f.d.id, 3, defense); f.advance(30000);
+      assert.deepEqual(f.engine.playerView(f.a.id)!.lessons, [STRATEGIES[attack].attackTips[1 - attackIndex], STRATEGIES[defense].defenseTips[1 - defenseIndex]]);
+      assert.equal(calls, 4, 'exhausted topics draw again');
+    }
+  }
+});
+
+test('solo topic bags survive leaving, selecting another role and reconnecting, while sessions stay independent', () => {
+  let now = 0; const e = new Engine(() => now, () => .25); e.allowSurrender = true;
+  const p = e.connect(); let seq = 0;
+  const finish = (id: string, role: Role, strategy: number) => {
+    e.action(id, { kind: 'create', mode: 'solo', role, duration: 30, startImmediately: true });
+    now += 3000; e.advance();
+    const roundId = e.playerView(id)!.roundId;
+    e.action(id, { kind: 'strategy', strategy, roundId, seq: ++seq });
+    e.action(id, { kind: 'surrender', roundId, seq: ++seq });
+    const lessons = [...e.playerView(id)!.lessons];
+    e.action(id, { kind: 'leave' });
+    return lessons;
+  };
+  assert.equal(finish(p.id, 'defense', 1)[1], STRATEGIES[1].defenseTips[0]);
+  finish(p.id, 'attack', 2);
+  e.disconnect(p.id); e.connect(p.token);
+  assert.equal(finish(p.id, 'defense', 1)[1], STRATEGIES[1].defenseTips[1]);
+  assert.equal(finish(p.id, 'defense', 1)[1], STRATEGIES[1].defenseTips[0]);
+  const other = e.connect();
+  assert.equal(finish(other.id, 'defense', 1)[1], STRATEGIES[1].defenseTips[0]);
+  assert.equal(finish(p.id, 'defense', 1)[1], STRATEGIES[1].defenseTips[1]);
 });
