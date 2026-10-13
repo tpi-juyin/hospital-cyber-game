@@ -36,6 +36,7 @@ export async function startServers(options: Options = {}) {
   async function staticFile(path: string, res: ServerResponse, host: boolean) {
     let file: string;
     if (path === '/' || path === '/index.html' || (host && path === '/host.html')) file = resolve(assets, host ? 'host.html' : 'index.html');
+    else if (!host && (path === '/watch' || path === '/watch/' || path === '/watch.html')) file = resolve(assets, 'watch.html');
     else if (path.startsWith('/assets/')) {
       file = resolve(assets, '.' + path);
       if (!file.startsWith(resolve(assets, 'assets') + sep)) return json(res, 404, { error: 'Not found' });
@@ -51,6 +52,20 @@ export async function startServers(options: Options = {}) {
     if (req.method !== 'GET') return json(res, 405, { error: 'Method not allowed' });
     if (url.pathname === '/api/health') return json(res, 200, { entry: 'participant', ok: true, version: GAME_VERSION });
     if (url.pathname.startsWith('/api/host')) return json(res, 403, { error: '此入口不提供主持功能。' });
+    // Dedicated read-only views: no session registration, host credentials or mutation handlers.
+    if (url.pathname === '/api/spectate/rooms') {
+      const rooms = [...engine.rooms.keys()].map(id => {
+        const r = engine.view(id)!;
+        return { id: r.id, code: r.code, mode: r.mode, phase: r.phase, hp: r.hp, shield: r.shield, remainingMs: r.remainingMs, duration: r.duration, members: r.members.map(({ name, role }) => ({ name, role })) };
+      });
+      return json(res, 200, { version: GAME_VERSION, rooms });
+    }
+    if (url.pathname.startsWith('/api/spectate/rooms/')) {
+      const id = url.pathname.slice('/api/spectate/rooms/'.length);
+      if (!engine.rooms.has(id)) return json(res, 404, { error: '這場對戰已關閉，請選擇其他對戰。' });
+      const { ownerId: _owner, ...room } = engine.view(id)!;
+      return json(res, 200, { version: GAME_VERSION, room });
+    }
     void staticFile(url.pathname, res, false);
   });
   async function hostHandler(req: IncomingMessage, res: ServerResponse) {

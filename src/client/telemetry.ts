@@ -1,4 +1,4 @@
-import { STRATEGIES, ULTIMATE_NAMES, combatStrategy, defenseMatches, type Phase, type RoomView } from '../shared/protocol';
+import { STRATEGIES, ULTIMATE_NAMES, combatStrategy, defenseMatches, type Phase, type SpectatorRoomView } from '../shared/protocol';
 
 export type Tone = 'ok' | 'warn' | 'danger' | 'idle';
 export interface Sample { at: number; attack: number; blocked: number; attacks: number; blocks: number; gap: boolean }
@@ -15,7 +15,7 @@ export class TelemetryHistory {
   private rooms = new Map<string, Telemetry>();
   constructor(private clock: () => number = () => performance.now()) {}
   get(id: string) { return this.rooms.get(id); }
-  update(rooms: RoomView[]) {
+  update(rooms: SpectatorRoomView[]) {
     const now = this.clock(), active = new Set(rooms.map(r => r.id));
     for (const id of this.rooms.keys()) if (!active.has(id)) this.rooms.delete(id);
     for (const r of rooms) {
@@ -61,7 +61,7 @@ export class TelemetryHistory {
 }
 
 /** CPU, memory and latency are explicitly illustrative, derived from game pressure. */
-export function serverMetrics(r: RoomView, rate: number) {
+export function serverMetrics(r: SpectatorRoomView, rate: number) {
   const primaryUp = r.hp > 50, backupUp = r.hp > 0, failover = !primaryUp && backupUp;
   const attack = r.members.find(m => m.role === 'attack'), defense = r.members.find(m => m.role === 'defense');
   const matched = !!attack && !!defense && defenseMatches(attack, defense);

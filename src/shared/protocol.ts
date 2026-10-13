@@ -67,3 +67,6 @@ export type Action =
   | { kind: 'strategy'; strategy: Strategy; roundId: string; seq: number };
 export interface Reply { ok: boolean; code?: string; message?: string; }
 export interface HostView { hostingMode?: 'local' | 'cloud'; lobby: LobbyView; rooms: RoomView[]; uptimeSeconds: number; tunnelStatus: string; tunnelControl?: { available: boolean; busy: boolean; failed: boolean }; }
+
+export type SpectatorRoomView = Omit<RoomView, 'ownerId'>;
+export type SpectatorSummary = Pick<RoomView, 'id' | 'code' | 'mode' | 'phase' | 'hp' | 'shield' | 'remainingMs' | 'duration'> & { members: Pick<MemberView, 'name' | 'role'>[] };

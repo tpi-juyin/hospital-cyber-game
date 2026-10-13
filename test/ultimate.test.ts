@@ -82,7 +82,7 @@ test('all three regular defenses are weak against the fourth attack; the fourth 
     f.fill(f.d.id); f.input(f.d.id, 'ultimate'); f.input(f.a.id, 'tap');
     near(f.view().hp, 100 - 1.15 * 1.5 * .25);
     assert.equal(defenseMatches(f.view().members[0], f.view().members[1]), true);
-    const hp = f.view().hp; f.input(f.d.id, 'tap'); near(f.view().shield, 1.05); assert.equal(f.view().hp, hp, 'no healing');
+    const hp = f.view().hp; f.input(f.d.id, 'tap'); near(f.view().shield, 1.05); near(f.view().hp, Math.min(100, hp + .3));
   }
   const f = duel(); f.start(); f.input(f.d.id, 'strategy', 1); f.e.rooms.get(f.view().id)!.shield = 0;
   f.fill(f.d.id); f.input(f.d.id, 'ultimate'); f.input(f.a.id, 'tap'); near(f.view().hp, 100 - 1.15 * .25);

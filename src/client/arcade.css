@@ -264,3 +264,31 @@ body.arcade-theme .host-card .qr-zoom-hint{text-align:center;color:#bcefe5;font-
 .qr-large-frame{width:min(560px,calc(100vw - 100px),calc(100dvh - 240px));min-width:100px;margin:0 auto 14px;background:#fffdf5;border-radius:8px;overflow:hidden;line-height:0}
 .qr-large-frame canvas{width:100%!important;height:auto!important;display:block}
 .qr-dialog p{margin-bottom:12px}.qr-dialog h2{font-size:24px}
+
+/* Defense guidance: high-contrast text with a gold outline and static label. */
+body.arcade-theme .strategy-button.defense.recommended{background:#14233d;color:#fff;border:3px solid #f5c65b;box-shadow:0 0 0 1px #80602c,0 0 10px #f5c65b33}
+body.arcade-theme .strategy-button.defense.recommended .cooldown-text{order:-1;background:#f5c65b;color:#19233a;font-weight:900;line-height:1.25;padding:2px 5px;border-radius:4px;white-space:nowrap}
+body.arcade-theme .ultimate-meter.counter-alert,body.arcade-theme .ultimate-button.counter-alert{border:3px solid #78dec9;box-shadow:0 0 0 1px #234f5b}
+body.arcade-theme .result-actions{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:6px 0 12px}
+body.arcade-theme .result-actions #rematch{width:auto;min-height:42px;margin:0;padding:8px 16px;font-size:15px}
+body.arcade-theme .result-actions #leave{width:auto;margin:0;padding:8px;font-size:13px}
+
+body.arcade-theme .controls .section-label{flex-wrap:wrap}
+
+body.arcade-theme a.spectator-entry{text-decoration:none;display:flex;align-items:center;justify-content:space-between}
+
+body.arcade-theme .strategy-button.defense.recommended b{color:#fff}
+body.arcade-theme a.game-mode.spectator-entry{background:linear-gradient(135deg,#20504f,#1b334c);border-color:#72cbbb;color:#f1fffb;justify-content:initial}
+body.arcade-theme a.game-mode.spectator-entry small{color:#c1e9e3}
+
+body.arcade-theme .ultimate-button.counter-alert{animation:none;background:#163d49;color:#fff}body.arcade-theme .ultimate-button.counter-alert b,body.arcade-theme .ultimate-button.counter-alert span{color:#fff}
+
+/* Only the action currently recommended to defenders receives the gold cue. */
+body.arcade-theme .ultimate-panel.defense .ultimate-button.counter-alert,
+body.arcade-theme .tap-button.defense.counter-charge{background:#14233d;color:#fff;border:3px solid #f5c65b;box-shadow:0 0 0 1px #80602c,0 0 10px #f5c65b33;animation:none}
+body.arcade-theme .ultimate-panel.defense .ultimate-button.counter-alert #ultimate-action-label,
+body.arcade-theme .tap-button.defense.counter-charge span small{background:#f5c65b;color:#19233a;border-radius:4px;padding:3px 5px;font-weight:900;line-height:1.3}
+body.arcade-theme .ultimate-panel.defense .ultimate-button.active{background:#1b454b;color:#fff;border-color:#78dec9;box-shadow:0 0 0 1px #234f5b}
+body.arcade-theme .ultimate-panel.defense .ultimate-button.counter-alert{gap:5px;padding-inline:7px}
+body.arcade-theme .ultimate-panel.defense .ultimate-button.counter-alert #ultimate-action-label{font-size:10px;white-space:normal;text-align:center}
+body.arcade-theme .ultimate-panel.defense .ultimate-meter small{white-space:normal;text-align:right;font-size:10px}

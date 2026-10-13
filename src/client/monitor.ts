@@ -1,4 +1,4 @@
-import { STRATEGIES, combatName, combatStrategy, type RoomView } from '../shared/protocol';
+import { STRATEGIES, combatName, combatStrategy, type SpectatorRoomView } from '../shared/protocol';
 import { ULTIMATE } from '../shared/balance';
 import { GAME_VERSION } from '../shared/version';
 import { escape as esc, hospital, icon } from './art';
@@ -33,7 +33,7 @@ function trend(h: Telemetry) {
 export class ServerMonitor {
   private mounted = false;
   private cache = new Map<string, string>();
-  constructor(private root: HTMLElement) {}
+  constructor(private root: HTMLElement, private exitLabel = '返回指揮中心') {}
   private fill(id: string, html: string) {
     if (this.cache.get(id) === html) return;
     this.cache.set(id, html); this.root.querySelector<HTMLElement>(`#${id}`)!.innerHTML = html;
@@ -44,7 +44,7 @@ export class ServerMonitor {
     this.root.classList.add('server-monitor');
     this.root.setAttribute('role', 'dialog'); this.root.setAttribute('aria-modal', 'true'); this.root.setAttribute('aria-labelledby', 'monitor-title');
     this.root.innerHTML = `<div class="monitor-wrap">
-      <header class="monitor-header"><div class="monitor-brand"><span class="monitor-brand-icon">${icon('shield', 29)}</span><div><span class="monitor-eyebrow">CYBER CARE / OPERATIONS</span><h1 id="monitor-title">戰況儀表板 <small class="projection-version">v${GAME_VERSION}</small></h1></div></div><div class="monitor-header-right"><div id="monitor-round"></div><button class="monitor-exit" data-exit>返回指揮中心 ${icon('close', 18)}</button></div></header>
+      <header class="monitor-header"><div class="monitor-brand"><span class="monitor-brand-icon">${icon('shield', 29)}</span><div><span class="monitor-eyebrow">CYBER CARE / OPERATIONS</span><h1 id="monitor-title">戰況儀表板 <small class="projection-version">v${GAME_VERSION}</small></h1></div></div><div class="monitor-header-right"><div id="monitor-round"></div><button class="monitor-exit" data-exit>${esc(this.exitLabel)} ${icon('close', 18)}</button></div></header>
       <div class="monitor-meta"><span>演練模擬 · 非真實醫療監控</span><span id="monitor-feed" role="status"></span></div>
       <div id="monitor-stale" class="monitor-stale" role="status" hidden>監控連線中斷 · 畫面保留最後資料，尚未確認目前戰況。</div>
       <section id="monitor-status" class="monitor-status"></section>
@@ -63,7 +63,7 @@ export class ServerMonitor {
     this.root.classList.toggle('monitor-disconnected', stale);
     this.root.querySelector<HTMLElement>('#monitor-stale')!.hidden = !stale;
   }
-  render(r: RoomView, h: Telemetry, stale = false) {
+  render(r: SpectatorRoomView, h: Telemetry, stale = false) {
     this.mount(); this.connection(stale);
     this.root.dataset.phase = r.phase;
     const m = serverMetrics(r, h.attackRate), attack = r.members.find(p => p.role === 'attack'), defense = r.members.find(p => p.role === 'defense');

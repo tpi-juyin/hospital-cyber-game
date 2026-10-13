@@ -79,7 +79,7 @@ function lobbyScreen(soloRoom?: RoomView) {
     role = soloRoom.members.find(m => m.id === session?.id)!.role;
   }
   if (menuStep === 'home') {
-    shell(`<section class="title-screen"><span class="season-stamp">CYBER CARE // ARCADE</span><h1 class="game-logo">醫院資安<strong>攻防戰<span>✦</span></strong></h1><div class="title-stage">${arena()}</div><p class="title-tag">連點出招 · 大招反制 · 守住最後一秒</p></section><nav class="game-menu" aria-label="遊戲模式"><button id="menu-solo" class="game-mode solo">${icon('cpu', 28)}<span>單人挑戰<small>SOLO / VS 電腦</small></span>${icon('arrow', 23)}</button><button id="menu-duo" class="game-mode duo">${icon('users', 28)}<span>雙人對戰<small>VERSUS / 找朋友 PK</small></span>${icon('arrow', 23)}</button><button id="menu-join" class="party-button">${icon('key', 18)}${pendingInvite ? '收到好友邀請 · 加入房間' : '輸入房號，加入朋友'}<span>JOIN</span></button></nav><div class="menu-status"><span>免註冊 · 30–120 秒</span><span><b id="online">${lobby.online}</b> 人在線</span></div>${!connected ? '<button class="retry-button" id="retry">重新連線</button>' : ''}`);
+    shell(`<section class="title-screen"><span class="season-stamp">CYBER CARE // ARCADE</span><h1 class="game-logo">醫院資安<strong>攻防戰<span>✦</span></strong></h1><div class="title-stage">${arena()}</div><p class="title-tag">連點出招 · 大招反制 · 守住最後一秒</p></section><nav class="game-menu" aria-label="遊戲模式"><button id="menu-solo" class="game-mode solo">${icon('cpu', 28)}<span>單人挑戰<small>SOLO / VS 電腦</small></span>${icon('arrow', 23)}</button><button id="menu-duo" class="game-mode duo">${icon('users', 28)}<span>雙人對戰<small>VERSUS / 找朋友 PK</small></span>${icon('arrow', 23)}</button><a class="game-mode spectator-entry" href="/watch">${icon('users', 28)}<span>觀戰<small>觀看朋友對戰</small></span>${icon('arrow', 23)}</a><button id="menu-join" class="party-button">${icon('key', 18)}${pendingInvite ? '收到好友邀請 · 加入房間' : '輸入房號，加入朋友'}<span>JOIN</span></button></nav><div class="menu-status"><span>免註冊 · 30–120 秒</span><span><b id="online">${lobby.online}</b> 人在線</span></div>${!connected ? '<button class="retry-button" id="retry">重新連線</button>' : ''}`);
     bind('menu-solo', () => { mode = 'solo'; menuStep = 'loadout'; render(true); });
     bind('menu-duo', () => { mode = 'duo'; menuStep = 'loadout'; render(true); });
     bind('menu-join', () => { menuStep = 'join'; render(true); });
@@ -198,13 +198,16 @@ function updateBattle(r: RoomView) {
   const matched = defenseMatches(attack, defense);
   const attackUltimate = combatStrategy(attack) === 3, defenseUltimate = combatStrategy(defense) === 3, mine = me.ultimate || { charge: 0, remainingMs: 0, uses: 0 }, active = mine.remainingMs > 0;
   set('match-hint', defenseUltimate ? '大招防護中 ✓' : attackUltimate ? '⚠ 大招來襲！' : matched ? '防護對應 ✓' : '⚠ 防護未對應');
+  const advice = role === 'defense' && r.phase === 'playing' && connected;
+  if (advice) set('match-hint', defenseUltimate ? '大招防護中 ✓' : attackUltimate ? mine.uses >= ULTIMATE.maxUses ? '⚠ 大招來襲 · 大招已用完' : mine.charge >= 100 ? '⚠ 大招來襲 · 按大招阻擋！' : '⚠ 大招來襲 · 連點集氣！' : matched ? '防護對應 · 補盾加成 ✓' : '⚠ 防護未對應 · 切換亮起招式 ↓');
   const matchHint = document.querySelector('#match-hint');
   matchHint?.classList.toggle('is-matched', matched); matchHint?.classList.toggle('is-mismatched', !matched);
   const hp = document.querySelector<HTMLElement>('#hp-bar'), shield = document.querySelector<HTMLElement>('#shield-bar');
   if (hp) hp.style.width = `${r.hp}%`; if (shield) shield.style.width = `${r.shield / 30 * 100}%`;
   document.querySelector('#timer')?.classList.toggle('urgent', r.remainingMs <= 10_000 && r.phase === 'playing');
   document.querySelector('.health-card')?.classList.toggle('critical', r.hp <= 25);
-  document.querySelectorAll<HTMLButtonElement>('[data-strategy]').forEach(b => { const selected = !active && Number(b.dataset.strategy) === me.strategy; b.classList.toggle('selected', selected); b.setAttribute('aria-pressed', String(selected)); b.disabled = !connected || r.phase !== 'playing' || active || (!selected && me.cooldownMs > 0); b.querySelector('.cooldown-text')!.textContent = active ? '大招結束恢復' : selected ? '使用中' : me.cooldownMs > 0 ? `${(me.cooldownMs / 1000).toFixed(1)} 秒` : '點選切換'; });
+  document.querySelectorAll<HTMLButtonElement>('[data-strategy]').forEach(b => { const selected = !active && Number(b.dataset.strategy) === me.strategy; b.classList.toggle('selected', selected); b.classList.toggle('recommended', advice && !active && !attackUltimate && !matched && Number(b.dataset.strategy) === attack.strategy); b.setAttribute('aria-pressed', String(selected)); b.disabled = !connected || r.phase !== 'playing' || active || (!selected && me.cooldownMs > 0); b.querySelector('.cooldown-text')!.textContent = active ? '大招結束恢復' : b.classList.contains('recommended') ? '↓ 建議切換' : selected ? (advice && matched && !attackUltimate ? '補盾加成' : '使用中') : me.cooldownMs > 0 ? `${(me.cooldownMs / 1000).toFixed(1)} 秒` : '點選切換'; });
+  set('ultimate-status', role === 'defense' ? '防禦換招無冷卻' : '換招冷卻 3 秒');
   const ultimate = document.querySelector<HTMLButtonElement>('#ultimate');
   if (ultimate) {
     const ready = mine.charge >= 100 && mine.uses < ULTIMATE.maxUses;
@@ -212,20 +215,25 @@ function updateBattle(r: RoomView) {
     const meter = document.querySelector<HTMLElement>('#ultimate-meter')!;
     ultimate.hidden = !ready && !active; meter.hidden = ready || active;
     meter.classList.toggle('spent', spent);
+    meter.classList.remove('counter-alert');
     meter.setAttribute('aria-valuenow', String(mine.charge));
     meter.setAttribute('aria-valuetext', spent ? '本局大招已用完' : `集氣 ${Math.floor(mine.charge)}%`);
     meter.querySelector<HTMLElement>('.ultimate-charge')!.style.width = `${mine.charge}%`;
     ultimate.disabled = !connected || r.phase !== 'playing' || !ready || active || ultimatePending;
     ultimate.classList.toggle('charged', ready); ultimate.classList.toggle('active', active);
-    ultimate.classList.toggle('counter-alert', role === 'defense' && attackUltimate && ready && connected && r.phase === 'playing');
+    ultimate.classList.toggle('counter-alert', advice && attackUltimate && ready && !active);
     ultimate.setAttribute('aria-pressed', String(active));
-    const label = active ? `剩 ${(mine.remainingMs / 1000).toFixed(1)} 秒` : mine.uses >= ULTIMATE.maxUses ? '本局已用完' : ready ? '點我開大！' : `集氣 ${Math.floor(mine.charge)}%`;
-    set('ultimate-charge-label', spent ? '本局已用完' : `連點集氣 ${Math.floor(mine.charge)}%`); set('ultimate-action-label', label); ultimate.setAttribute('aria-label', `${ULTIMATE_NAMES[role]}，${label}`);
+    const label = active ? `${role === 'defense' ? '防護中 · ' : ''}剩 ${(mine.remainingMs / 1000).toFixed(1)} 秒` : mine.uses >= ULTIMATE.maxUses ? '本局已用完' : ready ? advice && attackUltimate ? '↓ 立即施放・抵擋大招' : '點我開大！' : `集氣 ${Math.floor(mine.charge)}%`;
+    set('ultimate-charge-label', spent ? advice && attackUltimate ? '本局已用完 · 連點補盾' : '本局已用完' : `${advice && attackUltimate ? '大招來襲！連點集氣' : '連點集氣'} ${Math.floor(mine.charge)}%`); set('ultimate-action-label', label); ultimate.setAttribute('aria-label', `${ULTIMATE_NAMES[role]}，${label}`);
     const bar = ultimate.querySelector<HTMLElement>('.ultimate-charge')!;
     bar.style.width = `${active ? mine.remainingMs / ULTIMATE.durationMs * 100 : mine.charge}%`;
-    set('ultimate-status', active ? '繼續連點！大招結束自動恢復' : mine.uses >= ULTIMATE.maxUses ? '本局大招已用完 · 繼續連點' : `大招剩 ${ULTIMATE.maxUses - mine.uses} 次 · 換招冷卻 3 秒`);
+    set('ultimate-status', active ? role === 'defense' ? '持續連點！補血＋補盾' : '繼續連點！大招結束自動恢復' : mine.uses >= ULTIMATE.maxUses ? '本局大招已用完 · 繼續連點' : `大招剩 ${ULTIMATE.maxUses - mine.uses} 次 · ${role === 'defense' ? '換招無冷卻' : '換招冷卻 3 秒'}`);
   }
-  const tap = document.querySelector<HTMLButtonElement>('#tap'); if (tap) { tap.disabled = !connected || r.phase !== 'playing'; tap.classList.toggle('ultimate-tap', active); }
+  const tap = document.querySelector<HTMLButtonElement>('#tap'); if (tap) { tap.disabled = !connected || r.phase !== 'playing'; tap.classList.toggle('ultimate-tap', active);
+    const chargeHint = advice && attackUltimate && !active && mine.charge < 100 && mine.uses < ULTIMATE.maxUses;
+    tap.classList.toggle('counter-charge', chargeHint);
+    const small = tap.querySelector('span small');
+    if (small && role === 'defense') small.textContent = active ? '防護中・連點補血＋補盾' : chargeHint ? '↓ 持續連點・集氣反制' : advice && attackUltimate && mine.uses >= ULTIMATE.maxUses ? '大招已用完・持續連點補盾' : '連續點擊，每秒最多 6 次'; }
 
   const surrenderButton = document.querySelector<HTMLButtonElement>('#surrender');
   if (surrenderButton) { surrenderButton.hidden = !lobby.allowSurrender || r.phase !== 'playing'; surrenderButton.disabled = !connected || surrenderPending; }
@@ -252,8 +260,13 @@ function updateBattle(r: RoomView) {
 function resultScreen(r: RoomView) {
   const me = r.members.find(m => m.id === session?.id)!; if (!me) return;
   const win = r.winner === me.role; const defender = r.members.find(m => m.role === 'defense');
-  shell(`<section class="result-hero ${win ? 'won' : r.winner ? 'lost' : 'neutral'} ${me.role}"><div class="result-medal">${icon(r.winner ? 'trophy' : 'users', 52)}</div><span class="eyebrow">${r.winner ? win ? 'VICTORY' : 'DEFEAT' : 'NO CONTEST'}</span><h1>${r.winner ? win ? me.role === 'attack' ? '入侵成功！' : '守護成功！' : me.role === 'attack' ? '入侵失敗' : '防線失守' : '任務中止'}</h1><p>${esc(r.reason)}</p><div class="result-character" role="img" aria-label="${me.role === 'attack' ? '駭客' : '醫院守護者'}${r.winner ? win ? '勝利' : '戰敗' : '中止對戰'}">${me.role === 'attack' ? hacker(r.winner ? win ? 'win' : 'loss' : 'neutral') : hospital(r.hp)}</div></section><section class="result-card"><div class="result-stats"><div><strong>${me.stats.taps}</strong><span>你的有效連點</span></div><div><strong>${Math.ceil(r.hp)}<small>%</small></strong><span>醫院剩餘血量</span></div><div><strong>${defender?.stats.hits ? Math.round(defender.stats.matchedHits / defender.stats.hits * 100) : 0}<small>%</small></strong><span>防護對應率</span></div></div><button class="primary-button" id="rematch">再次對戰 ${icon('arrow', 20)}</button><button class="text-button leave-button" id="leave">返回主選單</button><details class="learning" open><summary>收集本局資安情報 × ${r.lessons.length}</summary><div>${r.lessons.map((t, i) => `<p><span class="lesson-number">0${i + 1}</span>${esc(t)}</p>`).join('')}<small>真實防護需要多層措施；切換策略代表加強重點，不是關閉其他防護。</small></div></details></section>`);
-  bind('rematch', () => { void send({ kind: 'rematch' }); }); bind('leave', () => { void send({ kind: 'leave' }); });
+  shell(`<nav class="result-actions" aria-label="結算操作"><button class="secondary-button" id="rematch" disabled>再次對戰 ${icon('arrow', 16)}</button><button class="text-button" id="leave" disabled>返回主選單</button></nav><section class="result-hero ${win ? 'won' : r.winner ? 'lost' : 'neutral'} ${me.role}"><div class="result-medal">${icon(r.winner ? 'trophy' : 'users', 52)}</div><span class="eyebrow">${r.winner ? win ? 'VICTORY' : 'DEFEAT' : 'NO CONTEST'}</span><h1>${r.winner ? win ? me.role === 'attack' ? '入侵成功！' : '守護成功！' : me.role === 'attack' ? '入侵失敗' : '防線失守' : '任務中止'}</h1><p>${esc(r.reason)}</p><div class="result-character" role="img" aria-label="${me.role === 'attack' ? '駭客' : '醫院守護者'}${r.winner ? win ? '勝利' : '戰敗' : '中止對戰'}">${me.role === 'attack' ? hacker(r.winner ? win ? 'win' : 'loss' : 'neutral') : hospital(r.hp)}</div></section><section class="result-card"><div class="result-stats"><div><strong>${me.stats.taps}</strong><span>你的有效連點</span></div><div><strong>${Math.ceil(r.hp)}<small>%</small></strong><span>醫院剩餘血量</span></div><div><strong>${defender?.stats.hits ? Math.round(defender.stats.matchedHits / defender.stats.hits * 100) : 0}<small>%</small></strong><span>防護對應率</span></div></div><details class="learning" open><summary>收集本局資安情報 × ${r.lessons.length}</summary><div>${r.lessons.map((t, i) => `<p><span class="lesson-number">0${i + 1}</span>${esc(t)}</p>`).join('')}<small>真實防護需要多層措施；切換策略代表加強重點，不是關閉其他防護。</small></div></details></section>`);
+  // Keep the final battle taps from immediately dismissing the result.
+  const rematch = document.querySelector<HTMLButtonElement>('#rematch')!;
+  const leave = document.querySelector<HTMLButtonElement>('#leave')!;
+  let unlocked = false;
+  setTimeout(() => { if (!rematch.isConnected) return; unlocked = true; rematch.disabled = false; leave.disabled = false; }, 1000);
+  bind('rematch', () => { if (unlocked) void send({ kind: 'rematch' }); }); bind('leave', () => { if (unlocked) void send({ kind: 'leave' }); });
 }
 function render(force = false) {
   syncAudio();

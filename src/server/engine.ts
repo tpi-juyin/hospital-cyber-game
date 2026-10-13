@@ -201,7 +201,7 @@ export class Engine {
     if (p.strategy === strategy) return;
     insist(!this.ultimateActive(p), 'ULTIMATE_ACTIVE', '大招結束後會恢復原招式。');
     insist(this.now() >= p.switchAt, 'COOLDOWN', '策略正在冷卻。');
-    p.strategy = strategy; p.switchAt = this.now() + BALANCE.strategyCooldownMs;
+    p.strategy = strategy; p.switchAt = this.now() + (p.role === 'attack' ? BALANCE.strategyCooldownMs : 0);
     if (p.role === 'attack') { const defender = r.members.map(id => this.requirePlayer(id)).find(m => m.bot && m.role === 'defense'); if (defender) defender.nextSwitch = this.now() + 900; }
   }
   private ultimateActive(p: Player) { return p.ultimateUntil > this.now(); }
@@ -219,7 +219,15 @@ export class Engine {
     const scale = 60 / r.duration;
     const ultimate = r.ultimateMode && this.ultimateActive(p);
     if (r.ultimateMode && !ultimate && p.ultimateUses < ULTIMATE.maxUses) p.charge = Math.min(100, p.charge + ULTIMATE.chargePerTap * scale);
-    if (p.role === 'defense') { const added = Math.min(30 - r.shield, BALANCE.shieldRestore * scale * (ultimate ? ULTIMATE.defenseShieldMultiplier : 1)); r.shield += added; p.stats.shieldAdded += added; return; }
+    if (p.role === 'defense') {
+      const attacker = r.members.map(id => this.requirePlayer(id)).find(m => m.role === 'attack')!;
+      const matched = !ultimate && !(r.ultimateMode && this.ultimateActive(attacker)) && p.strategy === attacker.strategy;
+      const restore = matched ? BALANCE.matchedShieldRestore : BALANCE.shieldRestore;
+      const added = Math.min(30 - r.shield, restore * scale * (ultimate ? ULTIMATE.defenseShieldMultiplier : 1));
+      r.shield += added; p.stats.shieldAdded += added;
+      if (ultimate) r.hp = Math.min(100, r.hp + ULTIMATE.defenseHealPerTap * scale);
+      return;
+    }
     const defender = r.members.map(id => this.requirePlayer(id)).find(m => m.role === 'defense')!;
     const guarding = r.ultimateMode && this.ultimateActive(defender);
     const matched = guarding || (!ultimate && p.strategy === defender.strategy); const multiplier = matched ? BALANCE.matchedAbsorption : BALANCE.mismatchedAbsorption;

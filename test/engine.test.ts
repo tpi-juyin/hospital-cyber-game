@@ -181,8 +181,8 @@ test('rate caps, sequence replay, round identity, cooldowns and invalid payloads
   f.advance(1000); f.tap(f.a.id, 10); assert.equal(f.engine.playerView(f.a.id)!.members[0].stats.taps, 7);
   f.advance(2000); f.switch(f.a.id, 11, 2);
 });
-test('both roles wait a full three seconds before switching again', () => {
-  for (const role of ['a', 'd'] as const) {
+test('attack waits a full three seconds before switching again', () => {
+  for (const role of ['a'] as const) {
     const f = fixture(); f.start(); const id = f[role].id;
     f.switch(id, 1, 1); assert.equal(f.engine.playerView(id)!.members.find(m => m.id === id)!.cooldownMs, 3000);
     f.advance(500); assert.throws(() => f.switch(id, 2, 2), code('COOLDOWN'));
@@ -302,4 +302,54 @@ test('solo topic bags survive leaving, selecting another role and reconnecting, 
   const other = e.connect();
   assert.equal(finish(other.id, 'defense', 1)[1], STRATEGIES[1].defenseTips[0]);
   assert.equal(finish(p.id, 'defense', 1)[1], STRATEGIES[1].defenseTips[1]);
+});
+
+test('defense can switch immediately, including after a paused reconnect', () => {
+  const f = fixture(); f.start();
+  f.switch(f.d.id, 1, 1); f.switch(f.d.id, 2, 2); f.switch(f.d.id, 3, 0);
+  assert.equal(f.engine.playerView(f.d.id)!.members[1].cooldownMs, 0);
+  f.engine.disconnect(f.d.id); f.advance(1200); f.engine.connect(f.d.token);
+  f.switch(f.d.id, 4, 1); f.switch(f.d.id, 5, 2);
+  assert.equal(f.engine.playerView(f.d.id)!.members[1].cooldownMs, 0);
+});
+test('matched ordinary defense restores 1.0, mismatch .7, scaled by duration and capped at 30', () => {
+  for (const duration of [30, 60, 120]) for (const matched of [false, true]) {
+    const f = fixture(duration); f.start();
+    if (!matched) f.switch(f.d.id, 1, 1);
+    for (let i=1;i<=6;i++) f.tap(f.a.id,i);
+    const before=f.engine.playerView(f.d.id)!.shield;
+    f.tap(f.d.id,2);
+    assert.ok(Math.abs(f.engine.playerView(f.d.id)!.shield-before-(matched?1:.7)*60/duration)<.011);
+    f.advance(1000);
+    for(let i=3;i<=8;i++)f.tap(f.d.id,i);
+    assert.ok(f.engine.playerView(f.d.id)!.shield<=30);
+  }
+});
+test('ordinary defense gains no matching bonus against an ultimate; defensive ultimate keeps its original restore', () => {
+  const f=fixture(); f.start();
+  const attacker=f.engine.players.get(f.a.id)!, defender=f.engine.players.get(f.d.id)!;
+  attacker.charge=100;
+  const roundId=f.engine.playerView(f.a.id)!.roundId;
+  f.engine.action(f.a.id,{kind:'ultimate',roundId,seq:1});
+  for(let i=2;i<=7;i++)f.tap(f.a.id,i);
+  let before=f.engine.playerView(f.d.id)!.shield;f.tap(f.d.id,1);
+  assert.ok(Math.abs(f.engine.playerView(f.d.id)!.shield-before-.7)<.011);
+  defender.charge=100;f.engine.action(f.d.id,{kind:'ultimate',roundId,seq:2});
+  before=f.engine.playerView(f.d.id)!.shield;f.tap(f.d.id,3);
+  assert.ok(Math.abs(f.engine.playerView(f.d.id)!.shield-before-1.05)<.011);
+});
+
+test('defensive ultimate heals only accepted taps, scales with duration, caps HP and ends after five seconds', () => {
+ for(const duration of [30,60,120]) {
+  const f=fixture(duration);f.start();const r=f.engine.rooms.values().next().value!;
+  const d=f.engine.players.get(f.d.id)!;r.hp=70;d.charge=100;
+  f.engine.action(f.d.id,{kind:'ultimate',roundId:r.roundId,seq:1});
+  f.advance(1000);assert.equal(r.hp,70,'no passive healing');
+  f.tap(f.d.id,2);assert.ok(Math.abs(r.hp-70-.3*60/duration)<1e-8);
+  for(let i=3;i<=7;i++)f.tap(f.d.id,i);
+  const hp=r.hp;assert.throws(()=>f.tap(f.d.id,8),code('RATE_LIMIT'));assert.equal(r.hp,hp);
+  assert.throws(()=>f.tap(f.d.id,7),code('STALE_INPUT'));assert.equal(r.hp,hp);
+  f.advance(1000);r.hp=99.99;f.tap(f.d.id,9);assert.equal(r.hp,100);
+  f.advance(3000);r.hp=70;f.tap(f.d.id,10);assert.equal(r.hp,70,'no healing after ultimate expires');
+ }
 });

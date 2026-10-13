@@ -401,7 +401,10 @@ test('solo starts immediately but rematch requests waiting; duo retains its crea
   assert.deepEqual(JSON.parse(JSON.stringify(create)), { kind: 'create', mode: 'solo', role: 'attack', duration: 60, startImmediately: true });
   game.action(player.id, create); callbacks.room(game.playerView(player.id));
   assert.ok(window.document.querySelector('.battle-shell')); assert.equal(window.document.querySelector('#ready'), null);
-  const ended = game.playerView(player.id)!; ended.phase = 'ended'; callbacks.room(ended); click('rematch');
+  const ended = game.playerView(player.id)!; ended.phase = 'ended'; callbacks.room(ended);
+  const count = sent.length; click('rematch'); click('leave'); assert.equal(sent.length, count, 'result ignores final battle clicks');
+  assert.equal(window.document.querySelector('.result-actions')!.nextElementSibling!.classList.contains('result-hero'), true);
+  await new Promise(resolve => setTimeout(resolve, 1050)); click('rematch');
   assert.deepEqual(JSON.parse(JSON.stringify(sent.at(-1))), { kind: 'rematch' });
   callbacks.room(null); click('menu-duo');
   assert.equal(window.document.querySelector('[data-role]'), null, 'duo roles are selected inside the room');
@@ -443,7 +446,7 @@ test('solo rematch returns to selectable loadout, preserves settings on reconnec
   click('menu-solo'); click('create'); await settle(); now = 3000; game.advance();
   game.allowSurrender = true; game.action(player.id, { kind: 'surrender', roundId: game.playerView(player.id)!.roundId, seq: 1 }); callbacks.room(game.playerView(player.id));
   const oldId = game.playerView(player.id)!.id;
-  click('rematch'); await settle();
+  await new Promise(resolve => setTimeout(resolve, 1050)); click('rematch'); await settle();
   assert.equal(game.playerView(player.id)!.phase, 'waiting'); assert.ok(window.document.querySelector('.screen-loadout'));
   assert.equal(window.document.querySelector('#ready'), null); assert.equal(window.document.querySelector('.mode-tabs'), null);
   assert.equal(window.document.querySelector<HTMLInputElement>('#duration')!.value, '60');
@@ -552,4 +555,32 @@ test('cloud activity end clears player credentials and offers rejoin at the same
   assert.doesNotMatch(window.document.querySelector('.stopped-card')!.textContent!, /新的 QR Code/);
   assert.equal(window.document.querySelector('.stopped-card a')!.getAttribute('href'), '/');
   assert.equal(window.localStorage.getItem('hospital-token'), null);
+});
+
+test('defense guidance tracks matching skills and ultimate ready, charging, active and spent states', async t => {
+  const window=new Window({url:'https://game.example',settings:{enableJavaScriptEvaluation:true,suppressInsecureJavaScriptEnvironmentWarning:true}});
+  t.after(()=>window.happyDOM.close());window.document.body.innerHTML='<div id="app"></div>';window.eval((await compiled).outputFiles[0].text);
+  const {callbacks}=(window as unknown as {testSocket:{callbacks:Record<string,(data?:unknown)=>void>}}).testSocket;
+  const e=new Engine(),p=e.connect();e.action(p.id,{kind:'create',mode:'solo',role:'defense',duration:60});
+  callbacks.session(p);callbacks.connect();callbacks.lobby(e.lobby());const r=e.playerView(p.id)!;r.phase='playing';
+  const d=r.members[0],a=r.members[1];d.strategy=0;a.strategy=2;callbacks.room(r);
+  assert.equal(window.document.querySelector('.recommended')!.getAttribute('data-strategy'),'2');
+  assert.equal(window.document.querySelector<HTMLButtonElement>('[data-strategy="2"]')!.disabled,false);
+  d.strategy=2;callbacks.room(r);assert.equal(window.document.querySelector('.recommended'),null);
+  assert.match(window.document.querySelector('#match-hint')!.textContent!,/補盾加成/);
+  a.ultimate.remainingMs=5000;callbacks.room(r);assert.equal(window.document.querySelector('.recommended'),null);
+  assert.match(window.document.querySelector('#match-hint')!.textContent!,/連點集氣/);
+  assert.ok(window.document.querySelector('#tap.counter-charge'));
+  assert.equal(window.document.querySelector('#ultimate-meter.counter-alert'),null);
+  d.ultimate.charge=100;callbacks.room(r);assert.ok(window.document.querySelector('#ultimate.counter-alert'));
+  assert.match(window.document.querySelector('#ultimate-action-label')!.textContent!,/立即施放/);
+  assert.equal(window.document.querySelector('#tap.counter-charge'),null);
+  d.ultimate.remainingMs=5000;callbacks.room(r);assert.match(window.document.querySelector('#match-hint')!.textContent!,/大招防護中/);
+  assert.equal(window.document.querySelector('#ultimate.counter-alert'),null);
+  assert.match(window.document.querySelector('#tap')!.textContent!,/連點補血/);
+  d.ultimate.remainingMs=0;d.ultimate.charge=0;d.ultimate.uses=2;callbacks.room(r);
+  assert.match(window.document.querySelector('#match-hint')!.textContent!,/大招已用完/);
+  assert.equal(window.document.querySelector('#tap.counter-charge'),null);
+  assert.match(window.document.querySelector('#tap')!.textContent!,/持續連點補盾/);
+  assert.equal(window.document.querySelector('.recommended'),null);
 });

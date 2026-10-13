@@ -1,6 +1,7 @@
 export const BALANCE = {
   attackDamage: 1.15,
   shieldRestore: .7,
+  matchedShieldRestore: 1,
   matchedAbsorption: 1.25,
   mismatchedAbsorption: .25,
   strategyCooldownMs: 3000,
@@ -13,5 +14,6 @@ export const ULTIMATE = {
   attackMultiplier: 1.5,
   defenseDamageReduction: .75,
   defenseShieldMultiplier: 1.5,
+  defenseHealPerTap: .3,
   botReactionMs: 650,
 } as const;
