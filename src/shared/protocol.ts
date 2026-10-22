@@ -43,7 +43,7 @@ export const combatStrategy = (member: MemberView): CombatStrategy => member.ult
 export const combatName = (member: MemberView) => combatStrategy(member) === 3 ? ULTIMATE_NAMES[member.role] : STRATEGIES[member.strategy][member.role];
 export const defenseMatches = (attack: MemberView, defense: MemberView) => combatStrategy(defense) === 3 || combatStrategy(attack) === combatStrategy(defense);
 export interface Stats { taps: number; damage: number; blocked: number; shieldAdded: number; matchedHits: number; hits: number; byStrategy: number[] }
-export interface MemberView { id: string; name: string; role: Role; bot: boolean; connected: boolean; ready: boolean; strategy: Strategy; cooldownMs: number; stats: Stats; ultimate: { charge: number; remainingMs: number; uses: number } }
+export interface MemberView { id: string; name: string; role: Role; bot: boolean; connected: boolean; away?: boolean; ready: boolean; strategy: Strategy; cooldownMs: number; stats: Stats; ultimate: { charge: number; remainingMs: number; uses: number } }
 export interface RoomView {
   id: string; code: string; mode: 'solo' | 'duo'; ownerId: string; duration: number; ultimateMode: boolean;
   phase: Phase; roundId: string; hp: number; shield: number; remainingMs: number;
@@ -54,13 +54,14 @@ export interface SessionView { id: string; token: string; name: string; lastSeq:
 export interface LobbyView { version: string; accepting: boolean; allowSurrender: boolean; ultimateMode: boolean; defaultDuration: number; online: number; capacity: number; joinUrl: string; }
 export type Action =
   | { kind: 'name'; name: string }
-  | { kind: 'create'; mode: 'solo' | 'duo'; role: Role; duration: number; startImmediately?: boolean }
+  | { kind: 'create'; mode: 'solo' | 'duo'; role: Role; duration?: number; startImmediately?: boolean }
   | { kind: 'join'; code?: string; roomId?: string }
   | { kind: 'role'; role: Role }
   | { kind: 'duration'; duration: number }
   | { kind: 'ready'; ready: boolean }
   | { kind: 'rematch'; startImmediately?: boolean }
   | { kind: 'leave' }
+  | { kind: 'away' | 'resume'; roundId: string; seq: number }
   | { kind: 'surrender'; roundId: string; seq: number }
   | { kind: 'ultimate'; roundId: string; seq: number }
   | { kind: 'tap'; roundId: string; seq: number }

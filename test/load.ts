@@ -7,7 +7,7 @@ import type { RoomView, SessionView, Reply, Action } from '../src/shared/protoco
 import { GAME_VERSION } from '../src/shared/version';
 
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
-const server = await startServers(); const clients: { socket: Socket; session: SessionView; room: RoomView | null; seq: number }[] = [];
+const server = await startServers(); server.engine.setDuration(30); const clients: { socket: Socket; session: SessionView; room: RoomView | null; seq: number }[] = [];
 const ultimateMode = process.argv.includes('--ultimate'); server.engine.setUltimateMode(ultimateMode);
 let messages = 0, payloadBytes = 0;
 async function send(socket: Socket, action: Action) { return new Promise<Reply>((resolve, reject) => socket.timeout(5000).emit('action', action, (e: Error, r: Reply) => e ? reject(e) : r.ok ? resolve(r) : reject(new Error(r.message)))); }

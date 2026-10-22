@@ -5,11 +5,15 @@ import { STRATEGIES, type Role } from '../src/shared/protocol';
 
 function fixture(duration = 60, rng: () => number = () => .25) {
   let now = 0; const engine = new Engine(() => now, rng);
+  engine.setDuration(duration);
   const a = engine.connect(), d = engine.connect();
   engine.action(a.id, { kind: 'create', mode: 'duo', role: 'attack', duration });
   const waiting = engine.playerView(a.id)!; engine.action(d.id, { kind: 'join', code: waiting.code });
   const start = () => { engine.action(a.id, { kind: 'ready', ready: true }); engine.action(d.id, { kind: 'ready', ready: true }); now += 3000; engine.advance(); };
   return { engine, a, d, start, advance: (ms: number) => { now += ms; engine.advance(); }, tap: (id: string, seq: number) => engine.action(id, { kind: 'tap', roundId: engine.playerView(id)!.roundId, seq }), switch: (id: string, seq: number, strategy: number) => engine.action(id, { kind: 'strategy', roundId: engine.playerView(id)!.roundId, seq, strategy }) };
+}
+function resume(engine: Engine, id: string) {
+  engine.action(id, { kind: 'resume', roundId: engine.playerView(id)!.roundId, seq: engine.session(id).lastSeq + 1 });
 }
 const code = (expected: string) => (e: unknown) => e instanceof GameError && e.code === expected;
 test('round lessons follow both sides independently, including mismatched defenses and ultimate mode', () => {
@@ -45,7 +49,7 @@ test('lessons prefer the selected strategy for ties and rounds without taps, eve
     if (tiedTaps) { f.tap(f.a.id, 1); f.tap(f.d.id, 1); }
     f.switch(f.a.id, 2, 2); f.switch(f.d.id, 2, 1);
     if (tiedTaps) { f.tap(f.a.id, 3); f.tap(f.d.id, 3); }
-    f.engine.disconnect(f.d.id); f.advance(10000);
+    f.engine.disconnect(f.d.id); f.advance(30000);
     const ended = f.engine.playerView(f.a.id)!;
     assert.equal(ended.winner, null);
     assert.deepEqual(ended.lessons, [STRATEGIES[2].attackTips[0], STRATEGIES[1].defenseTips[0]]);
@@ -65,7 +69,7 @@ test('surrender defaults off, requires an active round and remains host-controll
   assert.equal(f.engine.allowSurrender, false);
   f.engine.allowSurrender = true; f.engine.disconnect(f.d.id);
   assert.throws(surrender, code('NOT_PLAYING'));
-  f.engine.connect(f.d.token); surrender();
+  f.engine.connect(f.d.token); resume(f.engine, f.d.id); surrender();
   assert.equal(f.engine.playerView(f.a.id)!.winner, 'defense');
 });
 test('either role can surrender solo or duo; stats and HP are preserved and rematch resets', () => {
@@ -117,9 +121,9 @@ test('joining, occupancy, roles, room authority and capacity are enforced', () =
   assert.equal(f.engine.playerView(f.a.id)!.members.filter(m => m.role === 'defense').length, 2);
   f.engine.action(f.a.id, { kind: 'role', role: 'attack' });
   assert.throws(() => f.engine.action(f.d.id, { kind: 'duration', duration: 30 }), code('FORBIDDEN'));
-  assert.throws(() => f.engine.action(f.a.id, { kind: 'duration', duration: 32 }), code('INVALID'));
-  f.engine.action(f.a.id, { kind: 'ready', ready: true }); f.engine.action(f.a.id, { kind: 'duration', duration: 90 });
-  assert.equal(f.engine.playerView(f.a.id)!.members.find(m => m.id === f.a.id)!.ready, false);
+  assert.throws(() => f.engine.action(f.a.id, { kind: 'duration', duration: 32 }), code('FORBIDDEN'));
+  f.engine.action(f.a.id, { kind: 'ready', ready: true }); assert.throws(() => f.engine.action(f.a.id, { kind: 'duration', duration: 90 }), code('FORBIDDEN'));
+  assert.equal(f.engine.playerView(f.a.id)!.members.find(m => m.id === f.a.id)!.ready, true);
   for (let i = 3; i < 30; i++) f.engine.connect();
   assert.throws(() => f.engine.connect(), code('CAPACITY'));
   assert.equal(f.engine.connect(f.a.token).id, f.a.id);
@@ -141,11 +145,11 @@ test('free role selection supports swapping, rejects same-side readiness and can
 test('solo create and rematch can start atomically; duo cannot bypass either readiness', () => {
   for (const role of ['attack', 'defense'] as const) for (const duration of [30, 60, 120]) {
     let now = 0; const e = new Engine(() => now), p = e.connect();
-    e.action(p.id, { kind: 'create', mode: 'solo', role, duration, startImmediately: true });
+    e.setDuration(duration); e.action(p.id, { kind: 'create', mode: 'solo', role, duration, startImmediately: true });
     assert.equal(e.playerView(p.id)!.phase, 'countdown'); assert.equal(e.playerView(p.id)!.remainingMs, 3000);
-    e.disconnect(p.id); now = 1000; e.connect(p.token); assert.equal(e.playerView(p.id)!.remainingMs, 3000);
+    e.disconnect(p.id); now = 1000; e.connect(p.token); resume(e, p.id); assert.equal(e.playerView(p.id)!.remainingMs, 3000);
     now += 3000; e.advance(); assert.equal(e.playerView(p.id)!.remainingMs, duration * 1000);
-    e.allowSurrender = true; e.action(p.id, { kind: 'surrender', roundId: e.playerView(p.id)!.roundId, seq: 1 });
+    e.allowSurrender = true; e.action(p.id, { kind: 'surrender', roundId: e.playerView(p.id)!.roundId, seq: e.session(p.id).lastSeq + 1 });
     e.action(p.id, { kind: 'rematch', startImmediately: true });
     assert.equal(e.playerView(p.id)!.phase, 'countdown'); assert.equal(e.playerView(p.id)!.hp, 100);
     assert.equal(e.playerView(p.id)!.members[0].role, role);
@@ -204,18 +208,18 @@ test('disconnect freezes only its room and reconnect restores authoritative stat
   const f = fixture(); f.start(); f.advance(8000); const other = f.engine.connect(); f.engine.action(other.id, { kind: 'create', mode: 'solo', role: 'defense', duration: 60 }); f.engine.action(other.id, { kind: 'ready', ready: true });
   const before = f.engine.playerView(f.a.id)!; f.engine.disconnect(f.d.id); f.advance(5000);
   assert.equal(f.engine.playerView(f.a.id)!.remainingMs, before.remainingMs); assert.equal(f.engine.playerView(other.id)!.phase, 'playing');
-  f.engine.connect(f.d.token); assert.equal(f.engine.playerView(f.a.id)!.phase, 'playing'); assert.equal(f.engine.playerView(f.a.id)!.remainingMs, before.remainingMs);
+  f.engine.connect(f.d.token); assert.equal(f.engine.playerView(f.a.id)!.phase, 'paused'); resume(f.engine, f.d.id); assert.equal(f.engine.playerView(f.a.id)!.phase, 'playing'); assert.equal(f.engine.playerView(f.a.id)!.remainingMs, before.remainingMs);
   f.advance(1000); assert.equal(f.engine.playerView(f.a.id)!.remainingMs, before.remainingMs - 1000);
 });
-test('10 second disconnect and 20 second cumulative limit yield no winner', () => {
+test('30 second disconnect and 60 second cumulative limit yield no winner', () => {
   const f = fixture(); f.start();
-  for (let i = 0; i < 2; i++) { f.engine.disconnect(f.d.id); f.advance(9000); f.engine.connect(f.d.token); }
+  for (let i = 0; i < 2; i++) { f.engine.disconnect(f.d.id); f.advance(29000); f.engine.connect(f.d.token); resume(f.engine, f.d.id); }
   f.engine.disconnect(f.d.id); f.advance(1999); assert.equal(f.engine.playerView(f.a.id)!.phase, 'paused'); f.advance(1);
   assert.equal(f.engine.playerView(f.a.id)!.phase, 'ended'); assert.equal(f.engine.playerView(f.a.id)!.winner, null);
-  const g = fixture(); g.start(); g.engine.disconnect(g.a.id); g.advance(10000); assert.equal(g.engine.playerView(g.d.id)!.winner, null); assert.equal(g.engine.playerView(g.d.id)!.phase, 'ended');
+  const g = fixture(); g.start(); g.engine.disconnect(g.a.id); g.advance(30000); assert.equal(g.engine.playerView(g.d.id)!.winner, null); assert.equal(g.engine.playerView(g.d.id)!.phase, 'ended');
 });
 test('disconnect during countdown resumes countdown without replaying elapsed time', () => {
-  const f = fixture(); f.engine.action(f.a.id, { kind: 'ready', ready: true }); f.engine.action(f.d.id, { kind: 'ready', ready: true }); f.advance(1000); f.engine.disconnect(f.a.id); f.advance(5000); f.engine.connect(f.a.token); assert.equal(f.engine.playerView(f.a.id)!.remainingMs, 2000); f.advance(2000); assert.equal(f.engine.playerView(f.a.id)!.phase, 'playing');
+  const f = fixture(); f.engine.action(f.a.id, { kind: 'ready', ready: true }); f.engine.action(f.d.id, { kind: 'ready', ready: true }); f.advance(1000); f.engine.disconnect(f.a.id); f.advance(5000); f.engine.connect(f.a.token); resume(f.engine, f.a.id); assert.equal(f.engine.playerView(f.a.id)!.remainingMs, 2000); f.advance(2000); assert.equal(f.engine.playerView(f.a.id)!.phase, 'playing');
 });
 test('leaving or closing affects only the selected room; expired rooms release resources', () => {
   const f = fixture(); f.start(); f.engine.action(f.a.id, { kind: 'leave' }); assert.equal(f.engine.playerView(f.d.id)!.winner, null); assert.equal(f.engine.playerView(f.d.id)!.phase, 'ended');
@@ -231,7 +235,7 @@ test('unreserved lobby reconnect cannot exceed 30 connected players', () => {
   assert.throws(() => e.connect(p.token), code('CAPACITY')); assert.equal(e.lobby().online, 30);
 });
 for (const role of ['attack', 'defense'] as Role[]) test(`solo ${role}: bot uses only legal cadence and both roles can complete rounds`, () => {
-  let now = 0; const e = new Engine(() => now, () => .1); const p = e.connect(); e.action(p.id, { kind: 'create', mode: 'solo', role, duration: 30 }); e.action(p.id, { kind: 'ready', ready: true });
+  let now = 0; const e = new Engine(() => now, () => .1); const p = e.connect(); e.setDuration(30); e.action(p.id, { kind: 'create', mode: 'solo', role, duration: 30 }); e.action(p.id, { kind: 'ready', ready: true });
   for (now = 0; now <= 33000; now += 50) e.advance();
   const r = e.playerView(p.id)!; assert.equal(r.phase, 'ended'); const bot = r.members.find(m => m.bot)!; assert.ok(bot.stats.taps <= 120); assert.ok(r.hp >= 0 && r.shield >= 0 && r.shield <= 30);
 });
@@ -285,7 +289,7 @@ test('solo topic bags survive leaving, selecting another role and reconnecting, 
   let now = 0; const e = new Engine(() => now, () => .25); e.allowSurrender = true;
   const p = e.connect(); let seq = 0;
   const finish = (id: string, role: Role, strategy: number) => {
-    e.action(id, { kind: 'create', mode: 'solo', role, duration: 30, startImmediately: true });
+    e.setDuration(30); e.action(id, { kind: 'create', mode: 'solo', role, duration: 30, startImmediately: true });
     now += 3000; e.advance();
     const roundId = e.playerView(id)!.roundId;
     e.action(id, { kind: 'strategy', strategy, roundId, seq: ++seq });
@@ -308,8 +312,8 @@ test('defense can switch immediately, including after a paused reconnect', () =>
   const f = fixture(); f.start();
   f.switch(f.d.id, 1, 1); f.switch(f.d.id, 2, 2); f.switch(f.d.id, 3, 0);
   assert.equal(f.engine.playerView(f.d.id)!.members[1].cooldownMs, 0);
-  f.engine.disconnect(f.d.id); f.advance(1200); f.engine.connect(f.d.token);
-  f.switch(f.d.id, 4, 1); f.switch(f.d.id, 5, 2);
+  f.engine.disconnect(f.d.id); f.advance(1200); f.engine.connect(f.d.token); resume(f.engine, f.d.id);
+  f.switch(f.d.id, 5, 1); f.switch(f.d.id, 6, 2);
   assert.equal(f.engine.playerView(f.d.id)!.members[1].cooldownMs, 0);
 });
 test('matched ordinary defense restores 1.0, mismatch .7, scaled by duration and capped at 30', () => {
@@ -352,4 +356,59 @@ test('defensive ultimate heals only accepted taps, scales with duration, caps HP
   f.advance(1000);r.hp=99.99;f.tap(f.d.id,9);assert.equal(r.hp,100);
   f.advance(3000);r.hp=70;f.tap(f.d.id,10);assert.equal(r.hp,70,'no healing after ultimate expires');
  }
+});
+
+test('background presence freezes battle, requires both returns, and cannot extend its deadline', () => {
+  const f = fixture(); f.start(); f.tap(f.a.id, 1);
+  const before = f.engine.playerView(f.a.id)!;
+  const presence = (id: string, kind: 'away' | 'resume') => f.engine.action(id, { kind, roundId: before.roundId, seq: f.engine.session(id).lastSeq + 1 });
+  presence(f.a.id, 'away'); f.advance(5000); presence(f.d.id, 'away');
+  presence(f.a.id, 'resume');
+  const paused = f.engine.playerView(f.a.id)!;
+  assert.equal(paused.phase, 'paused'); assert.equal(paused.hp, before.hp); assert.equal(paused.remainingMs, before.remainingMs);
+  assert.equal(paused.reconnectMs, 25000); assert.equal(paused.members[0].away, false); assert.equal(paused.members[1].away, true);
+  presence(f.d.id, 'away'); assert.equal(f.engine.playerView(f.a.id)!.reconnectMs, 25000, 'repeat away does not reset grace');
+  assert.throws(() => f.tap(f.a.id, 99), code('NOT_PLAYING'));
+  presence(f.d.id, 'resume'); assert.equal(f.engine.playerView(f.a.id)!.phase, 'playing');
+  f.advance(1000); assert.equal(f.engine.playerView(f.a.id)!.remainingMs, before.remainingMs - 1000);
+  assert.throws(() => f.engine.action(f.a.id, { kind: 'away', roundId: 'old-round', seq: 100 }), code('STALE_ROUND'));
+  assert.throws(() => f.engine.action(f.a.id, { kind: 'away', roundId: before.roundId, seq: 1 }), code('STALE_INPUT'));
+});
+
+test('solo background freezes the computer; expired disconnect still restores a no-contest result', () => {
+  let now = 0; const e = new Engine(() => now), p = e.connect();
+  e.action(p.id, { kind: 'create', mode: 'solo', role: 'defense', duration: 60, startImmediately: true });
+  now = 3000; e.advance();
+  const before = e.playerView(p.id)!;
+  e.action(p.id, { kind: 'away', roundId: before.roundId, seq: 1 });
+  now += 20000; e.advance(); assert.equal(e.playerView(p.id)!.attacks, before.attacks); assert.equal(e.playerView(p.id)!.hp, before.hp);
+  e.disconnect(p.id); now += 40000; e.advance();
+  assert.equal(e.playerView(p.id)!.phase, 'ended');
+  now += 60000; e.advance(); const reconnected = e.connect(p.token);
+  assert.equal(reconnected.roomId, before.id); assert.equal(e.playerView(p.id)!.winner, null);
+  assert.match(e.playerView(p.id)!.reason, /等待返回逾時/);
+  e.action(p.id, { kind: 'rematch' }); assert.equal(e.playerView(p.id)!.members[0].away, false);
+});
+
+test('a disconnected waiting player may return and start without an obsolete away flag', () => {
+  const f = fixture(); f.engine.disconnect(f.d.id); f.engine.connect(f.d.token); f.start();
+  assert.equal(f.engine.playerView(f.d.id)!.phase, 'playing'); assert.equal(f.engine.playerView(f.d.id)!.members[1].away, false);
+});
+
+test('host duration applies only to new rooms; player overrides and rematches cannot change it', () => {
+  const f=fixture(); f.engine.setDuration(90);
+  assert.equal(f.engine.playerView(f.a.id)!.duration,60);
+  for(const id of [f.a.id,f.d.id]) assert.throws(()=>f.engine.action(id,{kind:'duration',duration:120}),code('FORBIDDEN'));
+  f.start();f.advance(60000);f.engine.action(f.a.id,{kind:'rematch'});assert.equal(f.engine.playerView(f.a.id)!.duration,60);
+  const p=f.engine.connect();f.engine.action(p.id,{kind:'create',mode:'solo',role:'defense',duration:30});assert.equal(f.engine.playerView(p.id)!.duration,90);
+  f.engine.setDuration(120);assert.equal(f.engine.playerView(p.id)!.duration,90);
+  f.engine.action(p.id,{kind:'leave'});f.engine.action(p.id,{kind:'create',mode:'solo',role:'attack'});assert.equal(f.engine.playerView(p.id)!.duration,120);
+  assert.throws(()=>f.engine.setDuration(32),code('INVALID'));
+});
+
+test('solo pause allows repeated 60-second grace periods without cumulative cap or deadline extension', () => {
+  let now=0;const e=new Engine(()=>now),p=e.connect();e.action(p.id,{kind:'create',mode:'solo',role:'defense',startImmediately:true});now=3000;e.advance();
+  const presence=(kind:'away'|'resume')=>e.action(p.id,{kind,roundId:e.playerView(p.id)!.roundId,seq:e.session(p.id).lastSeq+1});
+  for(let i=0;i<3;i++){presence('away');assert.equal(e.playerView(p.id)!.reconnectMs,60000);now+=59000;e.advance();presence('away');assert.equal(e.playerView(p.id)!.reconnectMs,1000);presence('resume');assert.equal(e.playerView(p.id)!.phase,'playing');}
+  presence('away');now+=59999;e.advance();assert.equal(e.playerView(p.id)!.phase,'paused');now++;e.advance();assert.equal(e.playerView(p.id)!.phase,'ended');assert.equal(e.playerView(p.id)!.winner,null);
 });

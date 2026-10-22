@@ -1,3 +1,4 @@
+import { fullscreenButton } from './fullscreen';
 import { GAME_VERSION } from '../shared/version';
 import { type SpectatorRoomView, type SpectatorSummary } from '../shared/protocol';
 import { escape as esc, icon } from './art';
@@ -8,11 +9,12 @@ import './monitor.css';
 import './arcade.css';
 import './host-readable.css';
 import './spectator.css';
+import './landscape.css';
 
 const phases = { waiting: '等待準備', countdown: '即將開戰', playing: '對戰中', paused: '等待重連', ended: '已結束' };
 const app = document.querySelector<HTMLElement>('#app')!;
 document.body.classList.add('arcade-theme', 'host-theme');
-app.innerHTML = `<main class="host-shell spectator-shell"><header class="host-header"><a class="brand" href="/">${icon('shield', 26)} CYBER CARE <small>v${GAME_VERSION}</small></a><a class="secondary-button" href="/">返回主選單</a></header><section class="host-intro"><div><span class="eyebrow">WATCH THE BATTLE</span><h1>觀戰大廳</h1><p>選一場對戰，看看誰能守住醫院！</p></div></section><p id="watch-status" role="status"></p><section id="watch-rooms" class="room-grid" aria-label="可觀戰的對戰"></section></main><section id="watch-monitor" class="projection" hidden></section>`;
+app.innerHTML = `<main class="host-shell spectator-shell"><header class="host-header"><a class="brand" href="/">${icon('shield', 26)} CYBER CARE <small>v${GAME_VERSION}</small></a><div class="spectator-header-actions">${fullscreenButton()}<a class="secondary-button" href="/">返回主選單</a></div></header><section class="host-intro"><div><span class="eyebrow">WATCH THE BATTLE</span><h1>觀戰大廳</h1><p>選一場對戰，看看誰能守住醫院！</p></div></section><p id="watch-status" role="status"></p><section id="watch-rooms" class="room-grid" aria-label="可觀戰的對戰"></section></main><section id="watch-monitor" class="projection" hidden></section>`;
 const shell = document.querySelector<HTMLElement>('.spectator-shell')!;
 const panel = document.querySelector<HTMLElement>('#watch-monitor')!;
 const cards = document.querySelector<HTMLElement>('#watch-rooms')!;

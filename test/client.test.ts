@@ -398,7 +398,7 @@ test('solo starts immediately but rematch requests waiting; duo retains its crea
   click('menu-solo'); window.document.querySelector<HTMLButtonElement>('[data-role="attack"]')!.click(); click('create');
   await new Promise(resolve => setImmediate(resolve));
   const create = sent.find(a => a.kind === 'create')!;
-  assert.deepEqual(JSON.parse(JSON.stringify(create)), { kind: 'create', mode: 'solo', role: 'attack', duration: 60, startImmediately: true });
+  assert.deepEqual(JSON.parse(JSON.stringify(create)), { kind: 'create', mode: 'solo', role: 'attack', startImmediately: true });
   game.action(player.id, create); callbacks.room(game.playerView(player.id));
   assert.ok(window.document.querySelector('.battle-shell')); assert.equal(window.document.querySelector('#ready'), null);
   const ended = game.playerView(player.id)!; ended.phase = 'ended'; callbacks.room(ended);
@@ -409,7 +409,7 @@ test('solo starts immediately but rematch requests waiting; duo retains its crea
   callbacks.room(null); click('menu-duo');
   assert.equal(window.document.querySelector('[data-role]'), null, 'duo roles are selected inside the room');
   click('create'); await new Promise(resolve => setImmediate(resolve));
-  assert.deepEqual(JSON.parse(JSON.stringify(sent.at(-1))), { kind: 'create', mode: 'duo', role: 'attack', duration: 60, startImmediately: false });
+  assert.deepEqual(JSON.parse(JSON.stringify(sent.at(-1))), { kind: 'create', mode: 'duo', role: 'attack', startImmediately: false });
 });
 
 test('duo room shows both players even on the same side, permits selection and blocks ready until different', async t => {
@@ -449,17 +449,17 @@ test('solo rematch returns to selectable loadout, preserves settings on reconnec
   await new Promise(resolve => setTimeout(resolve, 1050)); click('rematch'); await settle();
   assert.equal(game.playerView(player.id)!.phase, 'waiting'); assert.ok(window.document.querySelector('.screen-loadout'));
   assert.equal(window.document.querySelector('#ready'), null); assert.equal(window.document.querySelector('.mode-tabs'), null);
-  assert.equal(window.document.querySelector<HTMLInputElement>('#duration')!.value, '60');
+  assert.equal(window.document.querySelector('#duration'), null); assert.equal(window.document.querySelector('#duration-value')!.textContent, '60');
   assert.equal(window.document.querySelector('[data-role="defense"]')!.getAttribute('aria-pressed'), 'true');
   window.document.querySelector<HTMLButtonElement>('[data-role="attack"]')!.click();
-  const slider = window.document.querySelector<HTMLInputElement>('#duration')!; slider.value = '90'; slider.dispatchEvent(new window.Event('input')); slider.dispatchEvent(new window.Event('change'));
+  game.setDuration(90); callbacks.lobby(game.lobby());
   assert.equal(game.playerView(player.id)!.members[0].role, 'attack'); assert.equal(game.playerView(player.id)!.members[1].role, 'defense');
   callbacks.disconnect(); callbacks.session(game.session(player.id)); callbacks.connect(); callbacks.room(game.playerView(player.id));
-  assert.ok(window.document.querySelector('.screen-loadout')); assert.equal(window.document.querySelector<HTMLInputElement>('#duration')!.value, '90');
+  assert.ok(window.document.querySelector('.screen-loadout')); assert.equal(window.document.querySelector('#duration-value')!.textContent, '60');
   callbacks.lobby({ ...game.lobby(), accepting: false }); assert.equal(window.document.querySelector<HTMLButtonElement>('#create')!.disabled, false, 'existing solo rematch remains available when new rooms are closed');
   click('create'); click('create'); await settle();
   assert.equal(game.playerView(player.id)!.phase, 'countdown'); assert.equal(game.playerView(player.id)!.id, oldId);
-  assert.equal(game.playerView(player.id)!.duration, 90); assert.equal(game.rooms.size, 1);
+  assert.equal(game.playerView(player.id)!.duration, 60); assert.equal(game.rooms.size, 1);
   assert.equal(sent.filter(a => a.kind === 'ready').length, 1, 'repeat taps cannot start twice');
   assert.ok(window.document.querySelector('.battle-shell'));
 });
@@ -583,4 +583,44 @@ test('defense guidance tracks matching skills and ultimate ready, charging, acti
   assert.equal(window.document.querySelector('#tap.counter-charge'),null);
   assert.match(window.document.querySelector('#tap')!.textContent!,/持續連點補盾/);
   assert.equal(window.document.querySelector('.recommended'),null);
+});
+
+test('background and reload require explicit resume; the resume control survives snapshots and home exit asks first', async t => {
+  const window = new Window({ url: 'https://game.example', settings: { enableJavaScriptEvaluation: true, suppressInsecureJavaScriptEnvironmentWarning: true } });
+  t.after(() => window.happyDOM.close());
+  window.document.body.innerHTML = '<div id="app"></div>';
+  window.eval((await compiled).outputFiles[0].text);
+  const { callbacks, socket, sent } = (window as unknown as { testSocket: { callbacks: Record<string, (data?: unknown) => void>; sent: Action[]; socket: { volatile: { emit: (event: string, action: Action) => void }; emit: (event: string, action: Action, callback: (err: null, reply: {ok: boolean}) => void) => void } } }).testSocket;
+  let now = 0; const game = new Engine(() => now), p = game.connect();
+  game.action(p.id, {kind:'create', mode:'solo', role:'defense', duration:60, startImmediately:true}); now=3000;game.advance();
+  const deliver = (action: Action) => { sent.push(action); game.action(p.id, action); callbacks.room(game.playerView(p.id)); };
+  socket.volatile.emit = (_event, action) => deliver(action);
+  socket.emit = (_event, action, callback) => { deliver(action); callback(null, {ok:true}); };
+  callbacks.session(p); callbacks.connect(); callbacks.room(game.playerView(p.id));
+  Object.defineProperty(window.document, 'hidden', {configurable:true,value:true});
+  window.document.dispatchEvent(new window.Event('visibilitychange'));
+  assert.equal(game.playerView(p.id)!.phase,'paused');
+  const taps = game.playerView(p.id)!.members[0].stats.taps;
+  window.document.querySelector<HTMLButtonElement>('#tap')!.click(); assert.equal(game.playerView(p.id)!.members[0].stats.taps,taps);
+  Object.defineProperty(window.document,'hidden',{configurable:true,value:false}); window.document.dispatchEvent(new window.Event('visibilitychange'));
+  assert.equal(game.playerView(p.id)!.phase,'paused','returning to the tab alone never resumes');
+  const button=window.document.querySelector<HTMLButtonElement>('#resume-battle')!;assert.ok(button);
+  now+=1000;game.advance();callbacks.room(game.playerView(p.id));assert.equal(window.document.querySelector('#resume-battle'),button,'updates preserve the clickable DOM node');
+  button.click();await Promise.resolve();await Promise.resolve();assert.equal(game.playerView(p.id)!.phase,'playing');
+  assert.equal(window.document.querySelector<HappyHTMLElement>('#overlay')!.hidden,true);
+  game.disconnect(p.id);callbacks.disconnect();game.connect(p.token);callbacks.session(game.session(p.id));callbacks.connect();callbacks.room(game.playerView(p.id));
+  assert.equal(game.playerView(p.id)!.phase,'paused');assert.ok(window.document.querySelector('#resume-battle'));
+  window.document.querySelector<HTMLButtonElement>('#resume-battle')!.click();await Promise.resolve();await Promise.resolve();
+  window.document.querySelector<HappyHTMLElement>('.topbar .brand')!.click();assert.ok(window.document.querySelector('[role="dialog"]'));
+  window.document.querySelector<HTMLButtonElement>('[data-cancel]')!.click();await Promise.resolve();assert.equal(game.playerView(p.id)!.phase,'playing');
+  window.document.querySelector<HappyHTMLElement>('.topbar .brand')!.click();window.document.querySelector<HTMLButtonElement>('[data-confirm]')!.click();await Promise.resolve();await Promise.resolve();assert.equal(game.playerView(p.id),null);
+});
+
+test('player duration is read-only, follows host before creation and stays fixed in an existing room', async t => {
+  const window=new Window({url:'https://game.example',settings:{enableJavaScriptEvaluation:true,suppressInsecureJavaScriptEnvironmentWarning:true}});t.after(()=>window.happyDOM.close());window.document.body.innerHTML='<div id="app"></div>';window.eval((await compiled).outputFiles[0].text);
+  const {callbacks}= (window as unknown as {testSocket:{callbacks:Record<string,(data?:unknown)=>void>}}).testSocket;
+  const e=new Engine(),p=e.connect();callbacks.session(p);callbacks.connect();window.document.querySelector<HTMLButtonElement>('#menu-duo')!.click();
+  e.setDuration(90);callbacks.lobby(e.lobby());assert.equal(window.document.querySelector('#duration-value')!.textContent,'90');assert.equal(window.document.querySelector('input[type="range"]'),null);
+  e.action(p.id,{kind:'create',mode:'duo',role:'attack'});callbacks.room(e.playerView(p.id));e.setDuration(120);callbacks.lobby(e.lobby());
+  assert.equal(window.document.querySelector('#duration-value')!.textContent,'90');assert.equal(window.document.querySelector('input[type="range"]'),null);
 });

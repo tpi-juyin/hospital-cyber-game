@@ -7,11 +7,11 @@ const error = (code: string) => (value: unknown) => value instanceof GameError &
 const near = (actual: number, expected: number) => assert.ok(Math.abs(actual - expected) < .015, `${actual} != ${expected}`);
 function duel(duration = 60, enabled = true) {
   let now = 0; const e = new Engine(() => now, () => .25), a = e.connect(), d = e.connect();
-  e.setUltimateMode(enabled);
+  e.setDuration(duration); e.setUltimateMode(enabled);
   e.action(a.id, { kind: 'create', mode: 'duo', role: 'attack', duration });
   e.action(d.id, { kind: 'join', code: e.playerView(a.id)!.code });
   const view = () => e.playerView(a.id)!;
-  const input = (id: string, kind: 'tap' | 'ultimate' | 'strategy', strategy: Strategy = 0) => e.action(id, { kind, strategy, roundId: view().roundId, seq: e.players.get(id)!.lastSeq + 1 });
+  const input = (id: string, kind: 'tap' | 'ultimate' | 'strategy' | 'resume', strategy: Strategy = 0) => e.action(id, { kind, strategy, roundId: view().roundId, seq: e.players.get(id)!.lastSeq + 1 });
   const advance = (ms: number) => { now += ms; e.advance(); };
   const start = () => { e.action(a.id, { kind: 'ready', ready: true }); e.action(d.id, { kind: 'ready', ready: true }); advance(3000); };
   const fill = (id: string) => { e.players.get(id)!.charge = 100; }; // Isolate combat boundaries from charging tests below.
@@ -93,10 +93,10 @@ test('pause freezes charge and the remaining burst, reconnect restores it, and a
   f.e.disconnect(f.d.id); const paused = f.view(); assert.equal(paused.members[0].ultimate.remainingMs, 3000);
   f.advance(5000); assert.deepEqual(f.view().members.map(m => m.ultimate), paused.members.map(m => m.ultimate));
   assert.throws(() => f.input(f.a.id, 'ultimate'), error('NOT_PLAYING'));
-  f.e.connect(f.d.token); assert.equal(f.view().members[0].ultimate.remainingMs, 3000);
+  f.e.connect(f.d.token); f.input(f.d.id, 'resume'); assert.equal(f.view().members[0].ultimate.remainingMs, 3000);
   f.advance(2999); assert.equal(combatStrategy(f.view().members[0]), 3);
   f.advance(1); assert.equal(combatStrategy(f.view().members[0]), 0);
-  f.e.disconnect(f.d.id); f.advance(10000); assert.equal(f.view().winner, null); assert.equal(f.view().phase, 'ended');
+  f.e.disconnect(f.d.id); f.advance(30000); assert.equal(f.view().winner, null); assert.equal(f.view().phase, 'ended');
   assert.ok(f.view().members.every(m => m.ultimate.remainingMs === 0));
 });
 

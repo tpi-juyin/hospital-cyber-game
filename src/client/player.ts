@@ -1,3 +1,4 @@
+import { fullscreenButton } from './fullscreen';
 import { io } from 'socket.io-client';
 import QRCode from 'qrcode';
 import { STRATEGIES, ROLE_LABEL, ULTIMATE_NAMES, combatStrategy, combatName, defenseMatches, type Action, type Role, type RoomView, type LobbyView, type SessionView, type Reply } from '../shared/protocol';
@@ -9,16 +10,20 @@ import { ULTIMATE } from '../shared/balance';
 import { randomName } from './names';
 import './style.css';
 import './arcade.css';
+import './landscape.css';
 import { GameDialog } from './game-dialog';
 
 const app = document.querySelector<HTMLDivElement>('#app')!;
 document.body.classList.add('arcade-theme');
 const surrenderDialog = new GameDialog();
+const leaveDialog = new GameDialog();
+let returnRequired = false, resumePending = false;
+const activeMatch = () => !!room && ['playing', 'countdown', 'paused'].includes(room.phase);
 let surrenderRound = '';
 let menuStep: 'home' | 'loadout' | 'join' = 'home';
 let session: SessionView | null = null, room: RoomView | null = null;
 let lobby: LobbyView = { version: GAME_VERSION, accepting: true, allowSurrender: false, ultimateMode: false, defaultDuration: 60, online: 0, capacity: 30, joinUrl: '' };
-let name = localStorage.getItem('hospital-name')?.trim() || randomName(), mode: 'solo' | 'duo' = 'solo', role: Role = 'defense', duration = 60;
+let name = localStorage.getItem('hospital-name')?.trim() || randomName(), mode: 'solo' | 'duo' = 'solo', role: Role = 'defense';
 localStorage.setItem('hospital-name', name);
 let code = '', connected = false, connectionMessage = '連線中', lastKey = '', seq = 0, replaced = false;
 let muted = localStorage.getItem('hospital-muted') === 'true';
@@ -43,15 +48,32 @@ function toast(text: string) {
   clearTimeout(toastTimer); toastTimer = window.setTimeout(() => el.remove(), 3500);
 }
 function syncAudio() {
-  audio.configure({ effects: !muted, music, battle: connected && room?.phase === 'playing', urgent: connected && room?.phase === 'playing' && room.remainingMs > 0 && room.remainingMs <= 10_000, countdown: connected && room?.phase === 'countdown', result: connected && room?.phase === 'ended' && !!room.winner, visible: !document.hidden });
+  audio.configure({ effects: !muted, music, battle: connected && !returnRequired && room?.phase === 'playing', urgent: connected && room?.phase === 'playing' && room.remainingMs > 0 && room.remainingMs <= 10_000, countdown: connected && !returnRequired && room?.phase === 'countdown', result: connected && room?.phase === 'ended' && !!room.winner, visible: !document.hidden });
 }
 // Touch receives browser activation on release; an earlier resume can remain pending.
 document.addEventListener('pointerdown', e => { if (e.pointerType === 'mouse') void audio.unlock(); }, { capture: true, passive: true });
 document.addEventListener('pointerup', () => { void audio.unlock(); }, { capture: true, passive: true });
 document.addEventListener('click', () => { void audio.unlock(); }, { capture: true });
 document.addEventListener('keydown', e => { if (!e.repeat) void audio.unlock(); }, { capture: true });
-document.addEventListener('visibilitychange', syncAudio);
-window.addEventListener('pagehide', () => { audio.configure({ effects: !muted, music, battle: false, visible: false }); effects.clear(); });
+function markAway() {
+  if (!activeMatch() || !room) return;
+  returnRequired = true;
+  surrenderDialog.close(); leaveDialog.close();
+  // Never queue presence or taps while offline; reconnect snapshots carry away state.
+  if (connected) socket.emit('action', { kind: 'away', roundId: room.roundId, seq: ++seq }, () => {});
+  render();
+}
+document.addEventListener('visibilitychange', () => { if (document.hidden) markAway(); syncAudio(); });
+window.addEventListener('beforeunload', event => { if (activeMatch()) { event.preventDefault(); event.returnValue = ''; } });
+document.addEventListener('click', event => {
+  if (!(event.target instanceof Element) || !event.target.closest('.topbar .brand') || !activeMatch()) return;
+  event.preventDefault();
+  const roundId = room!.roundId;
+  void leaveDialog.open({ title: '離開這場對戰？', message: '確認後會退出房間，本局中止且不計勝負。若只是暫時切換 App，回來後可按「返回繼續」。', confirm: '離開對戰', cancel: '繼續對戰' }).then(yes => {
+    if (yes && room?.roundId === roundId && activeMatch()) void send({ kind: 'leave' });
+  });
+});
+window.addEventListener('pagehide', () => { markAway(); audio.configure({ effects: !muted, music, battle: false, visible: false }); effects.clear(); });
 window.addEventListener('pageshow', syncAudio);
 function send(action: Action): Promise<boolean> {
   if (!connected) { toast('請等待重新連線。'); return Promise.resolve(false); }
@@ -60,11 +82,29 @@ function send(action: Action): Promise<boolean> {
 function audioButton(id: string, enabled: boolean, label: string, glyph: string) {
   return `<button class="icon-button ${enabled ? 'audio-on' : ''}" id="${id}" aria-pressed="${enabled}" aria-label="${enabled ? '關閉' : '開啟'}${label}" title="${label}">${icon(glyph, 19)}${enabled ? '' : '<span class="audio-off-line" aria-hidden="true"></span>'}</button>`;
 }
-function prefButtons() { return `<div class="preferences">${audioButton('sound', !muted, '音效', 'sound')}${audioButton('music', music, '戰鬥音樂', 'music')}<button class="motion-button" id="motion" aria-pressed="${reduced}">${reduced ? '動畫：少' : '動畫：開'}</button></div>`; }
+function prefButtons() { return `<div class="preferences">${audioButton('sound', !muted, '音效', 'sound')}${audioButton('music', music, '戰鬥音樂', 'music')}${fullscreenButton()}<button class="motion-button" id="motion" aria-pressed="${reduced}">${reduced ? '動畫：少' : '動畫：開'}</button></div>`; }
 function shell(content: string, battle = false, screenOverride?: 'loadout') {
   effects.clear();
   const screen = screenOverride || (room ? battle ? 'battle' : room.phase === 'waiting' ? 'waiting' : 'result' : menuStep);
   app.innerHTML = `<main class="player-shell screen-${screen} ${battle ? 'battle-shell' : ''}"><header class="topbar"><a class="brand" href="/" aria-label="醫院資安攻防戰首頁">${icon('shield', 25)}<span class="brand-wordmark">CYBER<span class="brand-light"> CARE</span><small class="version-label" aria-label="遊戲版本 ${GAME_VERSION}">v${GAME_VERSION}</small></span></a>${prefButtons()}</header><div class="connection ${connected ? '' : 'offline'}" role="status"><span></span><b id="connection-label">${esc(connectionMessage)}</b></div>${content}<footer class="page-footer">醫院資安攻防戰 <span>•</span> 學會防護，一起守住醫療服務</footer></main>`;
+  // Layout groups are transparent in portrait; orientation changes need no re-render.
+  const group = (parent: Element, className: string, selectors: string[]) => {
+    const nodes = selectors.flatMap(selector => [...parent.querySelectorAll(':scope > ' + selector)]);
+    if (!nodes.length) return;
+    const wrapper = document.createElement('div'); wrapper.className = className;
+    parent.insertBefore(wrapper, nodes[0]); nodes.forEach(node => wrapper.append(node));
+  };
+  const setup = app.querySelector('.setup-card');
+  if (setup) {
+    group(setup, 'layout-identity', ['.field-label', '.nickname-row', '.nickname-hint', '.mode-tabs']);
+    group(setup, 'layout-loadout', ['.section-label', '.role-cards', '.duo-setup-hint', '.duration-box', '#create']);
+    group(setup, 'layout-join', ['.invite-intro', '.invite-button', '.divider', '.join-form', '.micro-copy']);
+  }
+  const waiting = app.querySelector('.waiting-card');
+  if (waiting) {
+    group(waiting, 'layout-room-info', ['.room-share', '.room-qr-details', '.member-list']);
+    group(waiting, 'layout-room-ready', ['.room-role-selection', '.role-hint', '.duration-box', '.mode-description', '#ready', '#leave']);
+  }
   document.body.classList.toggle('reduced-motion', reduced);
   document.querySelector('#sound')?.addEventListener('click', () => { muted = !muted; localStorage.setItem('hospital-muted', String(muted)); syncAudio(); if (!muted) void audio.unlock(); render(true); });
   document.querySelector('#music')?.addEventListener('click', () => { music = !music; localStorage.setItem('hospital-music', String(music)); syncAudio(); if (music) void audio.unlock(); render(true); });
@@ -72,10 +112,10 @@ function shell(content: string, battle = false, screenOverride?: 'loadout') {
 }
 function bind(id: string, fn: () => void) { document.getElementById(id)?.addEventListener('click', fn); }
 function roleCards(selected: Role) { return `<div class="role-cards"><button class="role-card attack ${selected === 'attack' ? 'selected' : ''}" data-role="attack" aria-pressed="${selected === 'attack'}"><span class="role-art">${hacker()}</span><b>我要進攻</b><small>限時攻下醫院主機</small><i>${icon('key', 17)}</i></button><button class="role-card defense ${selected === 'defense' ? 'selected' : ''}" data-role="defense" aria-pressed="${selected === 'defense'}"><span class="role-art">${hospital()}</span><b>我要防守</b><small>守住每一秒醫療服務</small><i>${icon('shield', 17)}</i></button></div>`; }
-function durationInput(value: number, disabled = false) { return `<div class="duration-row"><label for="duration">${icon('clock', 17)}對戰時間</label><strong><span id="duration-value">${value}</span><small> 秒</small></strong></div><input class="range" id="duration" type="range" min="30" max="120" step="5" value="${value}" ${disabled ? 'disabled' : ''}><div class="range-labels"><span>30 秒</span><span>2 分鐘</span></div>`; }
+function durationDisplay(value: number) { return `<div class="duration-row"><span>${icon('clock', 17)}本局時間</span><strong><span id="duration-value">${value}</span><small> 秒</small></strong></div><p class="nickname-hint">由指揮中心統一設定</p>`; }
 function lobbyScreen(soloRoom?: RoomView) {
   if (soloRoom) {
-    menuStep = 'loadout'; mode = 'solo'; duration = soloRoom.duration;
+    menuStep = 'loadout'; mode = 'solo';
     role = soloRoom.members.find(m => m.id === session?.id)!.role;
   }
   if (menuStep === 'home') {
@@ -87,25 +127,23 @@ function lobbyScreen(soloRoom?: RoomView) {
     return;
   }
   shell(`<header class="selection-heading"><button class="menu-back" id="menu-back" aria-label="返回主選單">←</button><div><span class="eyebrow">${menuStep === 'join' ? 'JOIN THE BATTLE' : mode === 'solo' ? 'CHOOSE YOUR SIDE' : 'CREATE A ROOM'}</span><h1>${menuStep === 'join' ? '加入房間' : mode === 'solo' ? '選擇你的角色' : '建立房間'}</h1></div></header>
-  <section class="setup-card"><label class="field-label" for="nickname">你的作戰代號</label><div class="nickname-row"><input id="nickname" class="text-input" maxlength="16" autocomplete="nickname" placeholder="輸入自己的代號" value="${esc(name)}"><button id="random-name" class="dice-button" type="button" aria-label="骰子隨機命名" title="隨機換個代號">${icon('dice', 24)}</button></div><p class="nickname-hint">直接使用，或擲骰子換個代號。</p>${soloRoom ? '' : `<div class="mode-tabs" role="group" aria-label="遊戲模式"><button id="solo" class="${mode === 'solo' ? 'selected' : ''}">${icon('cpu', 20)}單人挑戰<small>VS 電腦</small></button><button id="duo" class="${mode === 'duo' ? 'selected' : ''}">${icon('users', 20)}雙人對戰<small>找朋友 PK</small></button></div>`}${mode === 'solo' ? `<div class="section-label"><span>選擇你的陣營</span><small>選好就能出發</small></div>${roleCards(role)}` : '<p class="duo-setup-hint">先建立房間，再和朋友自由選角。<br>一攻一守、雙方準備，就能開戰！</p>'}<div class="duration-box">${durationInput(duration)}</div><button id="create" class="primary-button" ${!connected || startPending || (!soloRoom && !lobby.accepting) ? 'disabled' : ''}>${mode === 'solo' ? '出發！挑戰電腦' : '建立雙人房間'} ${icon('arrow', 21)}</button>${pendingInvite ? `<p class="invite-intro">好友邀請已就緒，選好代號就能加入房間！</p><button class="primary-button invite-button" id="invite" ${!connected || !lobby.accepting || invitePending ? 'disabled' : ''}>${invitePending ? '正在加入…' : '點此加入'} ${icon('arrow', 21)}</button>` : `<div class="divider"><span>朋友已經開好房間？</span></div><form id="join-form" class="join-form"><input id="room-code" class="text-input code-input" inputmode="numeric" pattern="[1-9][0-9]{3}" maxlength="4" placeholder="4 位房號" aria-label="四位數房號" value="${esc(code)}"><button class="secondary-button" ${!connected || !lobby.accepting ? 'disabled' : ''}>加入</button></form>`}<p class="micro-copy">免註冊・每局 30～120 秒・目前 <b id="online">${lobby.online}</b> 人在線</p></section><p class="simulation-note">這是一場模擬演練。遊戲中的攻擊不會影響真實醫院系統。</p>${!connected ? '<button class="retry-button" id="retry">重新連線</button>' : ''}`, false, soloRoom ? 'loadout' : undefined);
+  <section class="setup-card"><label class="field-label" for="nickname">你的作戰代號</label><div class="nickname-row"><input id="nickname" class="text-input" maxlength="16" autocomplete="nickname" placeholder="輸入自己的代號" value="${esc(name)}"><button id="random-name" class="dice-button" type="button" aria-label="骰子隨機命名" title="隨機換個代號">${icon('dice', 24)}</button></div><p class="nickname-hint">直接使用，或擲骰子換個代號。</p>${soloRoom ? '' : `<div class="mode-tabs" role="group" aria-label="遊戲模式"><button id="solo" class="${mode === 'solo' ? 'selected' : ''}">${icon('cpu', 20)}單人挑戰<small>VS 電腦</small></button><button id="duo" class="${mode === 'duo' ? 'selected' : ''}">${icon('users', 20)}雙人對戰<small>找朋友 PK</small></button></div>`}${mode === 'solo' ? `<div class="section-label"><span>選擇你的陣營</span><small>選好就能出發</small></div>${roleCards(role)}` : '<p class="duo-setup-hint">先建立房間，再和朋友自由選角。<br>一攻一守、雙方準備，就能開戰！</p>'}<div class="duration-box">${durationDisplay(soloRoom?.duration ?? lobby.defaultDuration)}</div><button id="create" class="primary-button" ${!connected || startPending || (!soloRoom && !lobby.accepting) ? 'disabled' : ''}>${mode === 'solo' ? '出發！挑戰電腦' : '建立雙人房間'} ${icon('arrow', 21)}</button>${pendingInvite ? `<p class="invite-intro">好友邀請已就緒，選好代號就能加入房間！</p><button class="primary-button invite-button" id="invite" ${!connected || !lobby.accepting || invitePending ? 'disabled' : ''}>${invitePending ? '正在加入…' : '點此加入'} ${icon('arrow', 21)}</button>` : `<div class="divider"><span>朋友已經開好房間？</span></div><form id="join-form" class="join-form"><input id="room-code" class="text-input code-input" inputmode="numeric" pattern="[1-9][0-9]{3}" maxlength="4" placeholder="4 位房號" aria-label="四位數房號" value="${esc(code)}"><button class="secondary-button" ${!connected || !lobby.accepting ? 'disabled' : ''}>加入</button></form>`}<p class="micro-copy">免註冊・每局 30～120 秒・目前 <b id="online">${lobby.online}</b> 人在線</p></section><p class="simulation-note">這是一場模擬演練。遊戲中的攻擊不會影響真實醫院系統。</p>${!connected ? '<button class="retry-button" id="retry">重新連線</button>' : ''}`, false, soloRoom ? 'loadout' : undefined);
   bind('menu-back', () => { if (soloRoom) void send({ kind: 'leave' }); else { menuStep = 'home'; render(true); } });
   const nick = document.querySelector<HTMLInputElement>('#nickname')!;
   nick.addEventListener('input', () => { name = nick.value; localStorage.setItem('hospital-name', name); });
   bind('random-name', () => { name = randomName(name); nick.value = name; localStorage.setItem('hospital-name', name); toast(`你的新代號：${name}`); });
   bind('solo', () => { mode = 'solo'; render(true); }); bind('duo', () => { mode = 'duo'; render(true); });
   document.querySelectorAll<HTMLButtonElement>('[data-role]').forEach(b => b.addEventListener('click', () => { if (soloRoom) void send({ kind: 'role', role: b.dataset.role as Role }); else { role = b.dataset.role as Role; render(true); } }));
-  document.querySelector<HTMLInputElement>('#duration')!.addEventListener('input', e => { duration = Number((e.target as HTMLInputElement).value); document.querySelector('#duration-value')!.textContent = String(duration); });
-  if (soloRoom) document.querySelector<HTMLInputElement>('#duration')!.addEventListener('change', () => { void send({ kind: 'duration', duration }); });
   const setName = async () => { if (!name.trim()) { nick.focus(); toast('先取個作戰代號吧！'); return false; } return send({ kind: 'name', name }); };
   bind('create', () => { void (async () => {
     if (startPending) return;
     if (!name.trim()) { nick.focus(); toast('先取個作戰代號吧！'); return; }
-    const b = document.querySelector<HTMLButtonElement>('#create')!, selectedDuration = Number(document.querySelector<HTMLInputElement>('#duration')!.value), selectedMode = mode, selectedRole = role;
+    const b = document.querySelector<HTMLButtonElement>('#create')!, selectedMode = mode, selectedRole = role;
     startPending = true; b.disabled = true;
     try {
       if (await setName()) {
-        if (soloRoom) { if (await send({ kind: 'duration', duration: selectedDuration })) await send({ kind: 'ready', ready: true }); }
-        else await send({ kind: 'create', mode: selectedMode, role: selectedMode === 'solo' ? selectedRole : 'attack', duration: selectedDuration, startImmediately: selectedMode === 'solo' });
+        if (soloRoom) await send({ kind: 'ready', ready: true });
+        else await send({ kind: 'create', mode: selectedMode, role: selectedMode === 'solo' ? selectedRole : 'attack', startImmediately: selectedMode === 'solo' });
       }
     } finally { startPending = false; render(true); }
   })(); });
@@ -124,7 +162,7 @@ function lobbyScreen(soloRoom?: RoomView) {
 }
 function waitScreen(r: RoomView) {
   const me = r.members.find(m => m.id === session?.id)!; if (!me) return;
-  role = me.role; const owner = r.ownerId === me.id;
+  role = me.role;
   const conflict = r.members.length === 2 && r.members[0].role === r.members[1].role;
   const link = `${lobby.joinUrl || location.origin}/?room=${encodeURIComponent(r.id)}`;
   const seats = [...r.members, ...Array.from({ length: 2 - r.members.length }, () => null)];
@@ -133,13 +171,10 @@ function waitScreen(r: RoomView) {
     <div class="member-list player-seats">${seats.map(m => `<div class="member ${m?.role || 'empty'}"><span class="member-icon">${icon(m?.role === 'attack' ? 'key' : 'shield', 18)}</span><div><small>${m ? ROLE_LABEL[m.role] : '等待對手'}</small><b>${m ? esc(m.name) + (m.id === me.id ? '（你）' : '') : '等待朋友加入…'}</b><span class="ready-badge ${m?.ready ? 'is-ready' : ''}">${m ? !m.connected ? '離線' : m.ready ? '已準備' : '選角中' : '空位'}</span></div></div>`).join('')}</div>
     <div class="room-role-selection"><div class="section-label"><span>選擇你的陣營</span><small>換角會取消雙方準備</small></div>${roleCards(me.role)}</div>
     <p id="role-hint" class="role-hint ${conflict ? 'is-conflict' : ''}" role="status">${conflict ? '⚠ 選到同一邊了！請其中一位換邊。' : r.members.length < 2 ? '邀請朋友加入，一攻一守就能開戰。' : '一攻一守就定位！雙方準備即可開戰。'}</p>
-    <div class="duration-box">${durationInput(r.duration, !owner)}</div><p class="mode-description">${r.ultimateMode ? '大招模式 · 連點集氣，手動施放 5 秒大招。' : '一般模式 · 觀察招式，選對防護。'}${owner ? '' : ' 對戰時間由房主設定。'}</p>
+    <div class="duration-box">${durationDisplay(r.duration)}</div><p class="mode-description">${r.ultimateMode ? '大招模式 · 連點集氣，手動施放 5 秒大招。' : '一般模式 · 觀察招式，選對防護。'}</p>
     <button class="primary-button ${me.ready ? 'ready-button' : ''}" id="ready" ${conflict || !connected ? 'disabled' : ''}>${conflict ? '請先選擇不同陣營' : me.ready ? '已準備，等待對手…' : '我準備好了！'} ${icon('arrow', 20)}</button><button class="text-button leave-button" id="leave">離開房間</button></section>`);
   bind('ready', () => { void send({ kind: 'ready', ready: !me.ready }); }); bind('leave', () => { void send({ kind: 'leave' }); });
   document.querySelectorAll<HTMLButtonElement>('[data-role]').forEach(b => b.addEventListener('click', () => { void send({ kind: 'role', role: b.dataset.role as Role }); }));
-  const range = document.querySelector<HTMLInputElement>('#duration')!;
-  range.addEventListener('input', () => { document.querySelector('#duration-value')!.textContent = range.value; });
-  range.addEventListener('change', () => { void send({ kind: 'duration', duration: Number(range.value) }); });
   bind('copy-link', () => { void navigator.clipboard?.writeText(link).then(() => toast('加入連結已複製！')).catch(() => toast(link)); });
   const canvas = document.querySelector<HTMLCanvasElement>('#room-qr'); if (canvas) void QRCode.toCanvas(canvas, link, { width: 112, margin: 1, color: { dark: '#193246', light: '#fffdf4' } });
 }
@@ -148,7 +183,7 @@ function ultimateButton() {
 }
 async function releaseUltimate() {
   const me = room?.members.find(m => m.id === session?.id);
-  if (ultimatePending || !connected || !room?.ultimateMode || room.phase !== 'playing' || !me || me.ultimate.charge < 100 || me.ultimate.remainingMs > 0 || me.ultimate.uses >= ULTIMATE.maxUses) return;
+  if (ultimatePending || returnRequired || document.hidden || !connected || !room?.ultimateMode || room.phase !== 'playing' || !me || me.ultimate.charge < 100 || me.ultimate.remainingMs > 0 || me.ultimate.uses >= ULTIMATE.maxUses) return;
   ultimatePending = true; updateBattle(room);
   try { await send({ kind: 'ultimate', roundId: room.roundId, seq: ++seq }); }
   finally { ultimatePending = false; if (room && document.querySelector('#tap')) updateBattle(room); }
@@ -160,14 +195,14 @@ function battleScreen(r: RoomView) {
   oldUltimateUses = { attack: r.members.find(m => m.role === 'attack')?.ultimate?.uses || 0, defense: r.members.find(m => m.role === 'defense')?.ultimate?.uses || 0 };
   shell(`<section class="battle-top"><div><span class="eyebrow">${r.mode === 'solo' ? '單人挑戰' : `房間 ${r.code}`} ${r.ultimateMode ? '· 大招模式' : ''}</span><h1 class="side-title ${role}">${ROLE_LABEL[role]}</h1></div><div class="timer" id="timer">${icon('clock', 20)}<b id="remaining">60</b><small>秒</small></div></section><div class="battle-objective"><span>${role === 'attack' ? '突破護盾，在倒數結束前攻下主機！' : '強化護盾，讓醫療服務撐到最後！'}</span><button id="surrender" class="surrender-button" hidden>投降</button></div><section class="health-card"><div class="meter-label"><span>${icon('heart', 16)}醫院血量</span><b id="hp-text">100 / 100</b></div><div class="meter hp"><i id="hp-bar"></i></div><div class="meter-label shield-label"><span>${icon('shield', 16)}防護盾</span><b id="shield-text">30 / 30</b></div><div class="meter shield"><i id="shield-bar"></i></div></section><section class="battle-arena">${arena(r.hp)}<div class="battle-effects" aria-hidden="true"><div class="effect-lane attack-effects" data-effects="attack"></div><div class="effect-lane defense-effects" data-effects="defense"></div></div><div class="versus-names"><span>${esc(r.members.find(m => m.role === 'attack')?.name || '')}</span><span>${esc(r.members.find(m => m.role === 'defense')?.name || '')}</span></div></section><div class="intel-strip"><span>攻擊：<b id="attack-type"></b></span><span>防護：<b id="defense-type"></b></span></div><section class="controls">${r.ultimateMode ? ultimateButton() : ''}<div class="section-label"><b>${role === 'attack' ? '選擇攻擊招式' : '選擇防護重點'}</b><span class="match-hint" id="match-hint"></span></div><div class="strategy-grid">${STRATEGIES.map((s, i) => `<button class="strategy-button ${role}" data-strategy="${i}">${icon(i === 1 && role === 'defense' ? 'gate' : s.icon, 24)}<b>${s[role]}</b><small class="cooldown-text">點選切換</small></button>`).join('')}</div><button class="tap-button ${role}" id="tap">${icon(role === 'attack' ? 'bolt' : 'shield', 30)}<span>${role === 'attack' ? '發動攻擊' : '強化防護'}<small>連續點擊，每秒最多 6 次</small></span><span class="tap-spark">✦</span></button><div class="tap-counter">有效連點 <b id="tap-count">0</b><span id="ultimate-status">策略切換冷卻 3 秒</span></div></section><div id="overlay" class="game-overlay" hidden></div>`, true);
   document.querySelectorAll<HTMLButtonElement>('[data-strategy]').forEach(b => b.addEventListener('click', () => {
-    if (!connected || room?.phase !== 'playing') return;
+    if (!connected || returnRequired || document.hidden || room?.phase !== 'playing') return;
     socket.volatile.emit('action', { kind: 'strategy', strategy: Number(b.dataset.strategy), roundId: room.roundId, seq: ++seq }, (reply: Reply) => { if (!reply.ok && reply.code !== 'COOLDOWN') toast(reply.message || '無法切換。'); });
   }));
   bind('surrender', () => { void surrender(); });
   bind('ultimate', () => { void releaseUltimate(); });
   const tap = document.querySelector<HTMLButtonElement>('#tap')!;
   const press = () => {
-    if (!connected || room?.phase !== 'playing') return;
+    if (!connected || returnRequired || document.hidden || room?.phase !== 'playing') return;
     socket.volatile.emit('action', { kind: 'tap', roundId: room.roundId, seq: ++seq });
     const strategy = combatStrategy(room.members.find(m => m.id === session?.id)!);
     audio.action(role, strategy); effects.play(document.querySelector('.battle-arena'), role, strategy);
@@ -229,7 +264,7 @@ function updateBattle(r: RoomView) {
     bar.style.width = `${active ? mine.remainingMs / ULTIMATE.durationMs * 100 : mine.charge}%`;
     set('ultimate-status', active ? role === 'defense' ? '持續連點！補血＋補盾' : '繼續連點！大招結束自動恢復' : mine.uses >= ULTIMATE.maxUses ? '本局大招已用完 · 繼續連點' : `大招剩 ${ULTIMATE.maxUses - mine.uses} 次 · ${role === 'defense' ? '換招無冷卻' : '換招冷卻 3 秒'}`);
   }
-  const tap = document.querySelector<HTMLButtonElement>('#tap'); if (tap) { tap.disabled = !connected || r.phase !== 'playing'; tap.classList.toggle('ultimate-tap', active);
+  const tap = document.querySelector<HTMLButtonElement>('#tap'); if (tap) { tap.disabled = !connected || returnRequired || r.phase !== 'playing'; tap.classList.toggle('ultimate-tap', active);
     const chargeHint = advice && attackUltimate && !active && mine.charge < 100 && mine.uses < ULTIMATE.maxUses;
     tap.classList.toggle('counter-charge', chargeHint);
     const small = tap.querySelector('span small');
@@ -251,11 +286,30 @@ function updateBattle(r: RoomView) {
   oldUltimateUses = { attack: attack.ultimate?.uses || 0, defense: defense.ultimate?.uses || 0 };
   const overlay = document.querySelector<HTMLDivElement>('#overlay');
   if (overlay) {
-    const key = !connected ? 'disconnect' : r.phase;
-    overlay.hidden = connected && r.phase === 'playing';
+    const key = !connected ? 'disconnect' : returnRequired ? 'paused' : r.phase;
+    overlay.hidden = connected && !returnRequired && r.phase === 'playing';
     if (key === 'countdown') overlay.innerHTML = `<div class="countdown-card"><span>準備開戰</span><b>${Math.ceil(r.remainingMs / 1000)}</b><p>${role === 'attack' ? '觀察防護，找出突破口。' : '看清攻擊，選對防護。'}</p></div>`;
-    else if (key === 'paused' || key === 'disconnect') overlay.innerHTML = `<div class="countdown-card"><span>暫停一下</span>${icon('users', 50)}<h2>等待重新連線</h2><p>${connected ? `保留對戰 ${Math.ceil(r.reconnectMs / 1000)} 秒` : '網路恢復後自動返回對戰。'}</p></div>`;
+    else if (key === 'paused' || key === 'disconnect') {
+      const needsReturn = returnRequired || !!me.away;
+      const state = `${connected}:${needsReturn}`;
+      // Keep the resume button stable across ten-per-second state snapshots.
+      if (overlay.dataset.pauseState !== state || !overlay.querySelector('#resume-status')) {
+        overlay.innerHTML = `<div class="countdown-card"><span>對戰已暫停</span>${icon('users', 50)}<h2>${!connected ? '正在重新連線' : needsReturn ? '準備好再回到對戰' : '等待對方返回'}</h2><p id="resume-status"></p>${connected && needsReturn ? '<button class="primary-button" id="resume-battle">返回繼續</button>' : ''}</div>`;
+        overlay.dataset.pauseState = state;
+        overlay.querySelector('#resume-battle')?.addEventListener('click', () => { void resumeBattle(); });
+      }
+      overlay.querySelector('#resume-status')!.textContent = connected ? `保留對戰 ${Math.ceil(r.reconnectMs / 1000)} 秒；逾時不計勝負。` : '請恢復網路並留在此頁，連線後按「返回繼續」。';
+      const button = overlay.querySelector<HTMLButtonElement>('#resume-battle'); if (button) button.disabled = resumePending;
+    }
   }
+}
+async function resumeBattle() {
+  if (resumePending || !connected || !room || document.hidden) return;
+  const roundId = room.roundId;
+  resumePending = true; updateBattle(room);
+  const ok = await send({ kind: 'resume', roundId, seq: ++seq });
+  if (ok && room?.roundId === roundId) returnRequired = false;
+  resumePending = false; render();
 }
 function resultScreen(r: RoomView) {
   const me = r.members.find(m => m.id === session?.id)!; if (!me) return;
@@ -269,6 +323,8 @@ function resultScreen(r: RoomView) {
   bind('rematch', () => { if (unlocked) void send({ kind: 'rematch' }); }); bind('leave', () => { if (unlocked) void send({ kind: 'leave' }); });
 }
 function render(force = false) {
+  document.documentElement.classList.toggle('in-match', activeMatch());
+  if (!activeMatch()) { returnRequired = false; leaveDialog.close(); }
   syncAudio();
   if (hostingReset) {
     surrenderDialog.close();
@@ -294,19 +350,20 @@ function render(force = false) {
   if (force || key !== lastKey) { lastKey = key; qrKey = ''; if (!room) lobbyScreen(); else if (screen === 'waiting') { if (room.mode === 'solo') lobbyScreen(room); else waitScreen(room); } else if (screen === 'ended') resultScreen(room); else battleScreen(room); }
   if (room && screen === 'battle') updateBattle(room);
   const label = document.querySelector('#connection-label'); if (label) label.textContent = connectionMessage;
+  const durationLabel = document.querySelector('#duration-value'); if (durationLabel) durationLabel.textContent = String(room?.duration ?? lobby.defaultDuration);
   const online = document.querySelector('#online'); if (online) online.textContent = String(lobby.online);
   if (room?.phase === 'waiting' && room.mode === 'duo' && qrKey !== lobby.joinUrl) { qrKey = lobby.joinUrl; const canvas = document.querySelector<HTMLCanvasElement>('#room-qr'); if (canvas) void QRCode.toCanvas(canvas, `${lobby.joinUrl || location.origin}/?room=${room.id}`, { width: 112, margin: 1, color: { dark: '#193246', light: '#fffdf4' } }); }
 }
 socket.on('connect', () => { connected = true; connectionMessage = '已連線，準備出發'; render(); });
 socket.on('session', (s: SessionView) => { session = s; seq = s.lastSeq; localStorage.setItem('hospital-token', s.token); socket.auth = { token: s.token }; if (s.name !== '新玩家') name = s.name; });
-socket.on('room', (r: RoomView | null) => { const prior = room; room = r; if (prior && !r) { menuStep = 'home'; toast('已返回主選單。'); } render(); });
-socket.on('lobby', (l: LobbyView) => { if (lobby.defaultDuration !== l.defaultDuration) duration = l.defaultDuration; lobby = l; render(); });
-socket.on('disconnect', () => { connected = false; connectionMessage = replaced ? '已在另一個分頁開啟' : '連線中斷，正在重連'; render(); });
+socket.on('room', (r: RoomView | null) => { const prior = room; room = r; if (r?.members.find(m => m.id === session?.id)?.away) returnRequired = true; if (document.hidden && activeMatch() && !r?.members.find(m => m.id === session?.id)?.away) markAway(); if (prior && !r) { menuStep = 'home'; toast('已返回主選單。'); } render(); });
+socket.on('lobby', (l: LobbyView) => { lobby = l; render(); });
+socket.on('disconnect', () => { if (activeMatch()) returnRequired = true; connected = false; connectionMessage = replaced ? '已在另一個分頁開啟' : '連線中斷，正在重連'; render(); });
 socket.on('hosting-reset', (notice?: { reason?: string }) => { activityEnded = notice?.reason === 'activity-ended'; hostingReset = true; connected = false; room = null; session = null; localStorage.removeItem('hospital-token'); socket.disconnect(); connectionMessage = '請重新掃描加入'; render(true); });
 socket.on('replaced', () => { replaced = true; socket.disconnect(); toast('遊戲已在另一分頁開啟，此分頁暫停操作。'); });
 socket.on('connect_error', (e: Error & { data?: { code: string } }) => {
   connected = false;
-  if (e.data?.code === 'SESSION_EXPIRED') { localStorage.removeItem('hospital-token'); socket.auth = {}; session = null; room = null; socket.connect(); }
+  if (e.data?.code === 'SESSION_EXPIRED') { localStorage.removeItem('hospital-token'); socket.auth = {}; session = null; room = null; returnRequired = false; toast('先前的對戰已過期或活動已重新啟動，請重新開始。'); socket.connect(); }
   else { connectionMessage = e.data ? e.message : '正在連線，請確認活動仍在進行'; render(true); }
 });
 socket.connect(); render();

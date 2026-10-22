@@ -1,3 +1,4 @@
+import { fullscreenButton } from './fullscreen';
 import { STRATEGIES, combatName, combatStrategy, type SpectatorRoomView } from '../shared/protocol';
 import { ULTIMATE } from '../shared/balance';
 import { GAME_VERSION } from '../shared/version';
@@ -44,7 +45,7 @@ export class ServerMonitor {
     this.root.classList.add('server-monitor');
     this.root.setAttribute('role', 'dialog'); this.root.setAttribute('aria-modal', 'true'); this.root.setAttribute('aria-labelledby', 'monitor-title');
     this.root.innerHTML = `<div class="monitor-wrap">
-      <header class="monitor-header"><div class="monitor-brand"><span class="monitor-brand-icon">${icon('shield', 29)}</span><div><span class="monitor-eyebrow">CYBER CARE / OPERATIONS</span><h1 id="monitor-title">戰況儀表板 <small class="projection-version">v${GAME_VERSION}</small></h1></div></div><div class="monitor-header-right"><div id="monitor-round"></div><button class="monitor-exit" data-exit>${esc(this.exitLabel)} ${icon('close', 18)}</button></div></header>
+      <header class="monitor-header"><div class="monitor-brand"><span class="monitor-brand-icon">${icon('shield', 29)}</span><div><span class="monitor-eyebrow">CYBER CARE / OPERATIONS</span><h1 id="monitor-title">戰況儀表板 <small class="projection-version">v${GAME_VERSION}</small></h1></div></div><div class="monitor-header-right">${fullscreenButton()}<div id="monitor-round"></div><button class="monitor-exit" data-exit>${esc(this.exitLabel)} ${icon('close', 18)}</button></div></header>
       <div class="monitor-meta"><span>演練模擬 · 非真實醫療監控</span><span id="monitor-feed" role="status"></span></div>
       <div id="monitor-stale" class="monitor-stale" role="status" hidden>監控連線中斷 · 畫面保留最後資料，尚未確認目前戰況。</div>
       <section id="monitor-status" class="monitor-status"></section>

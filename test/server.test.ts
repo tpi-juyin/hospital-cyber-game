@@ -145,3 +145,19 @@ test('ultimate mode requires authenticated host access and fourth-move requests 
   assert.equal(state.lobby.ultimateMode, false); assert.equal(state.rooms[0].ultimateMode, true);
   assert.equal(state.rooms[0].members[0].ultimate.uses, 1); assert.ok(state.rooms[0].members[0].ultimate.remainingMs > 0);
 });
+
+test('WebSocket background pause and reconnect stay paused until authenticated owner resumes', async t => {
+  const server = await startServers(); t.after(() => server.stop()); const clients: Socket[]=[];t.after(()=>clients.forEach(s=>s.close()));
+  const a=await connect(server.playerUrl), b=await connect(server.playerUrl); clients.push(a.socket,b.socket);
+  assert.ok((await send(a.socket,{kind:'create',mode:'solo',role:'defense',duration:60,startImmediately:true})).ok);
+  const room=server.engine.playerView(a.session.id)!;
+  assert.ok((await send(a.socket,{kind:'away',roundId:room.roundId,seq:1})).ok);
+  assert.equal(server.engine.playerView(a.session.id)!.phase,'paused');
+  assert.equal((await send(b.socket,{kind:'resume',roundId:room.roundId,seq:1})).code,'NO_ROOM');
+  a.socket.disconnect();
+  await new Promise<void>((resolve,reject)=>{ const deadline=Date.now()+1000;const check=()=>{if(!server.engine.players.get(a.session.id)!.connected)resolve();else if(Date.now()>deadline)reject(Error('disconnect timeout'));else setTimeout(check,10)};check(); });
+  const reconnected=await connect(server.playerUrl,a.session.token);clients.push(reconnected.socket);
+  assert.equal(server.engine.playerView(a.session.id)!.phase,'paused');
+  assert.ok((await send(reconnected.socket,{kind:'resume',roundId:room.roundId,seq:reconnected.session.lastSeq+1})).ok);
+  assert.equal(server.engine.playerView(a.session.id)!.phase,'countdown');
+});

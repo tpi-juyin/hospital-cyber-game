@@ -292,3 +292,7 @@ body.arcade-theme .ultimate-panel.defense .ultimate-button.active{background:#1b
 body.arcade-theme .ultimate-panel.defense .ultimate-button.counter-alert{gap:5px;padding-inline:7px}
 body.arcade-theme .ultimate-panel.defense .ultimate-button.counter-alert #ultimate-action-label{font-size:10px;white-space:normal;text-align:center}
 body.arcade-theme .ultimate-panel.defense .ultimate-meter small{white-space:normal;text-align:right;font-size:10px}
+
+/* Reduce accidental pull-to-refresh and overscroll navigation during a match. */
+html.in-match{overscroll-behavior:none}
+html.in-match .battle-shell{overscroll-behavior:contain}

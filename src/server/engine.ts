@@ -12,7 +12,7 @@ function insist(value: unknown, code: string, message: string): asserts value { 
 function validRole(value: unknown): asserts value is Role { insist(value === 'attack' || value === 'defense', 'INVALID', '請選擇有效陣營。'); }
 function validDuration(value: unknown): asserts value is number { insist(typeof value === 'number' && Number.isInteger(value) && value >= 30 && value <= 120 && value % 5 === 0, 'INVALID', '對戰時間需為 30～120 秒，間隔 5 秒。'); }
 interface Player {
-  id: string; token: string; name: string; bot: boolean; connected: boolean; disconnectedAt: number;
+  id: string; token: string; name: string; bot: boolean; connected: boolean; away: boolean; disconnectedAt: number;
   roomId: string | null; role: Role; ready: boolean; strategy: Strategy; switchAt: number;
   lastSeq: number; tapTimes: number[]; stats: Stats; nextTap: number; nextSwitch: number;
   charge: number; ultimateUntil: number; ultimateUses: number;
@@ -40,9 +40,9 @@ export class Engine {
   private now() { return this.clock(); }
   private requirePlayer(id: string) { const p = this.players.get(id); insist(p, 'SESSION_EXPIRED', '活動已重新啟動，請重新加入。'); return p; }
   private requireRoom(p: Player) { const r = p.roomId ? this.rooms.get(p.roomId) : null; insist(r, 'NO_ROOM', '請先加入房間。'); return r; }
-  private resetPlayer(p: Player) { p.ready = p.bot; p.strategy = 0; p.switchAt = 0; p.tapTimes = []; p.stats = emptyStats(); p.nextTap = 0; p.nextSwitch = 0; p.charge = 0; p.ultimateUntil = 0; p.ultimateUses = 0; }
+  private resetPlayer(p: Player) { p.away = false; p.ready = p.bot; p.strategy = 0; p.switchAt = 0; p.tapTimes = []; p.stats = emptyStats(); p.nextTap = 0; p.nextSwitch = 0; p.charge = 0; p.ultimateUntil = 0; p.ultimateUses = 0; }
   private makePlayer(bot = false): Player {
-    return { id: uid(), token: bot ? '' : uid(), name: bot ? '電腦隊友' : '新玩家', bot, connected: true, disconnectedAt: 0, roomId: null, role: 'attack', ready: bot, strategy: 0, switchAt: 0, lastSeq: 0, tapTimes: [], stats: emptyStats(), nextTap: 0, nextSwitch: 0, charge: 0, ultimateUntil: 0, ultimateUses: 0, lessonBags: {} };
+    return { id: uid(), token: bot ? '' : uid(), name: bot ? '電腦隊友' : '新玩家', bot, connected: true, away: false, disconnectedAt: 0, roomId: null, role: 'attack', ready: bot, strategy: 0, switchAt: 0, lastSeq: 0, tapTimes: [], stats: emptyStats(), nextTap: 0, nextSwitch: 0, charge: 0, ultimateUntil: 0, ultimateUses: 0, lessonBags: {} };
   }
   connect(token?: string): SessionView {
     this.advance();
@@ -53,8 +53,7 @@ export class Engine {
       const p = this.requirePlayer(id);
       insist(isReserved(p) || occupied() < this.capacity, 'CAPACITY', '目前已有 30 位玩家，請稍候再加入。');
       p.connected = true;
-      const r = p.roomId ? this.rooms.get(p.roomId) : undefined;
-      if (r?.phase === 'paused' && r.members.every(id => this.requirePlayer(id).connected)) this.resume(r);
+      // Reconnecting restores the snapshot; the player explicitly resumes.
       return this.session(p.id);
     }
     insist(this.accepting, 'CLOSED', '主持人暫停新玩家加入，請稍候。');
@@ -80,11 +79,14 @@ export class Engine {
     const r = p.roomId ? this.rooms.get(p.roomId) : undefined;
     if (!r) return;
     if (r.phase === 'waiting') p.ready = false;
-    if (r.phase === 'playing' || r.phase === 'countdown') {
-      r.previousPhase = r.phase; r.savedRemaining = Math.max(0, r.deadline - this.now());
-      r.phase = 'paused'; r.pausedAt = this.now(); r.pauseLimit = Math.min(10_000, 20_000 - r.pauseTotal);
-      if (r.pauseLimit <= 0) this.end(r, null, '連線中斷，本局不計勝負。');
-    }
+    if (['playing', 'countdown', 'paused'].includes(r.phase)) p.away = true;
+    this.pause(r);
+  }
+  private pause(r: Room) {
+    if (r.phase !== 'playing' && r.phase !== 'countdown') return;
+    r.previousPhase = r.phase; r.savedRemaining = Math.max(0, r.deadline - this.now());
+    r.phase = 'paused'; r.pausedAt = this.now(); r.pauseLimit = r.mode === 'solo' ? 60_000 : Math.min(30_000, 60_000 - r.pauseTotal);
+    if (r.pauseLimit <= 0) this.end(r, null, '等待返回逾時，本局不計勝負。');
   }
   private resume(r: Room) {
     const elapsed = this.now() - r.pausedAt;
@@ -106,6 +108,17 @@ export class Engine {
     if (a.kind === 'join') { this.join(p, a); return; }
     if (a.kind === 'leave') { this.leave(p); return; }
     const r = this.requireRoom(p); r.touchedAt = this.now();
+    if (a.kind === 'away' || a.kind === 'resume') {
+      insist(a.roundId === r.roundId, 'STALE_ROUND', '此操作已過期。');
+      insist(Number.isSafeInteger(a.seq) && a.seq > p.lastSeq, 'STALE_INPUT', '重複或過期的操作。');
+      p.lastSeq = a.seq;
+      insist(['playing', 'countdown', 'paused'].includes(r.phase), 'STATE', '本局已停止，請查看結算。');
+      p.away = a.kind === 'away';
+      if (p.away) this.pause(r);
+      else if (r.phase === 'paused' && r.members.every(id => { const member = this.requirePlayer(id); return member.connected && !member.away; })) this.resume(r);
+      return;
+    }
+
     if (a.kind === 'tap' || a.kind === 'strategy' || a.kind === 'surrender' || a.kind === 'ultimate') {
       insist(r.phase === 'playing', 'NOT_PLAYING', '目前無法進行攻防。');
       if (a.kind === 'surrender') insist(this.allowSurrender, 'SURRENDER_DISABLED', '主持人目前未開放投降。');
@@ -131,8 +144,7 @@ export class Engine {
       p.role = a.role;
       for (const id of r.members) { const member = this.requirePlayer(id); if (member.bot) { member.role = opposite(p.role); member.name = member.role === 'attack' ? '電腦駭客' : '電腦守護者'; } member.ready = member.bot; }
     } else if (a.kind === 'duration') {
-      insist(p.id === r.ownerId, 'FORBIDDEN', '只有房主可以調整對戰時間。'); validDuration(a.duration); r.duration = a.duration;
-      for (const id of r.members) { const member = this.requirePlayer(id); member.ready = member.bot; }
+      throw new GameError('FORBIDDEN', '對戰時間統一由指揮中心設定，僅套用新房間。');
     } else if (a.kind === 'ready') {
       insist(typeof a.ready === 'boolean', 'INVALID', '無效準備狀態。');
       if (a.ready) insist(new Set(r.members.map(id => this.requirePlayer(id).role)).size === r.members.length, 'ROLE_CONFLICT', '請其中一位換邊，選擇不同陣營後才能準備。');
@@ -143,12 +155,12 @@ export class Engine {
   private create(p: Player, a: Extract<Action, { kind: 'create' }>) {
     insist(!p.roomId, 'ALREADY_JOINED', '請先離開目前房間。');
     insist(this.accepting, 'CLOSED', '主持人暫停新房間建立。');
-    insist(a.mode === 'solo' || a.mode === 'duo', 'INVALID', '無效遊戲模式。'); validRole(a.role); validDuration(a.duration);
+    insist(a.mode === 'solo' || a.mode === 'duo', 'INVALID', '無效遊戲模式。'); validRole(a.role);
     this.validateImmediateStart(a.mode, a.startImmediately);
     insist(this.usedCodes.size < 9000, 'CODES_FULL', '本次活動房號已用完，請重新啟動活動。');
     let code: string; do { code = String(randomInt(1000, 10000)); } while (this.usedCodes.has(code));
     this.usedCodes.add(code);
-    const r: Room = { id: uid(), code, ownerId: p.id, mode: a.mode, duration: a.duration, phase: 'waiting', roundId: uid(), members: [p.id], hp: 100, shield: 30, deadline: 0, pausedAt: 0, pauseTotal: 0, pauseLimit: 0, previousPhase: 'playing', savedRemaining: 0, winner: null, reason: '', lessons: [], touchedAt: this.now(), attacks: 0, blocks: 0, ultimateMode: this.ultimateMode };
+    const r: Room = { id: uid(), code, ownerId: p.id, mode: a.mode, duration: this.defaultDuration, phase: 'waiting', roundId: uid(), members: [p.id], hp: 100, shield: 30, deadline: 0, pausedAt: 0, pauseTotal: 0, pauseLimit: 0, previousPhase: 'playing', savedRemaining: 0, winner: null, reason: '', lessons: [], touchedAt: this.now(), attacks: 0, blocks: 0, ultimateMode: this.ultimateMode };
     this.resetPlayer(p); p.roomId = r.id; p.role = a.role;
     if (a.mode === 'solo') { const bot = this.makePlayer(true); bot.role = opposite(a.role); bot.name = bot.role === 'attack' ? '電腦駭客' : '電腦守護者'; bot.roomId = r.id; this.players.set(bot.id, bot); r.members.push(bot.id); }
     this.rooms.set(r.id, r);
@@ -265,7 +277,7 @@ export class Engine {
   advance() {
     const now = this.now();
     for (const r of this.rooms.values()) {
-      if (r.phase === 'paused') { if (now - r.pausedAt >= r.pauseLimit) this.end(r, null, '連線中斷，本局不計勝負。'); continue; }
+      if (r.phase === 'paused') { if (now - r.pausedAt >= r.pauseLimit) this.end(r, null, '等待返回逾時，本局不計勝負。'); continue; }
       if (r.phase === 'countdown' && now >= r.deadline) {
         r.phase = 'playing'; const start = r.deadline; r.deadline = start + r.duration * 1000;
         for (const id of r.members) { const p = this.requirePlayer(id); p.nextTap = start + 250; p.nextSwitch = start + (p.role === 'attack' ? 4000 : 900); }
@@ -288,7 +300,7 @@ export class Engine {
       if ((r.phase === 'waiting' || r.phase === 'ended') && now - r.touchedAt >= 600_000) this.closeRoom(r.id);
     }
     for (const p of this.players.values()) {
-      if (!p.bot && !p.connected && now - p.disconnectedAt >= 60_000) {
+      if (!p.bot && !p.connected && now - p.disconnectedAt >= 600_000) {
         this.leave(p); this.tokens.delete(p.token); this.players.delete(p.id);
       }
     }
@@ -299,7 +311,7 @@ export class Engine {
     return { id: r.id, code: r.code, mode: r.mode, ownerId: r.ownerId, duration: r.duration, ultimateMode: r.ultimateMode, phase: r.phase, roundId: r.roundId, hp: Math.round(r.hp * 100) / 100, shield: Math.round(r.shield * 100) / 100,
       remainingMs: r.phase === 'paused' ? r.savedRemaining : r.phase === 'waiting' ? r.duration * 1000 : r.phase === 'ended' ? 0 : Math.max(0, r.deadline - this.now()),
       reconnectMs: r.phase === 'paused' ? Math.max(0, r.pauseLimit - (this.now() - r.pausedAt)) : 0,
-      members: r.members.map(id => { const p = this.requirePlayer(id); return { id: p.id, name: p.name, role: p.role, bot: p.bot, connected: p.connected, ready: p.ready, strategy: p.strategy, cooldownMs: Math.max(0, p.switchAt - at), stats: { ...p.stats, byStrategy: [...p.stats.byStrategy] }, ultimate: { charge: Math.floor(p.charge * 10) / 10, remainingMs: r.phase === 'playing' || r.phase === 'paused' ? Math.max(0, p.ultimateUntil - at) : 0, uses: p.ultimateUses } }; }),
+      members: r.members.map(id => { const p = this.requirePlayer(id); return { id: p.id, name: p.name, role: p.role, bot: p.bot, connected: p.connected, away: p.away, ready: p.ready, strategy: p.strategy, cooldownMs: Math.max(0, p.switchAt - at), stats: { ...p.stats, byStrategy: [...p.stats.byStrategy] }, ultimate: { charge: Math.floor(p.charge * 10) / 10, remainingMs: r.phase === 'playing' || r.phase === 'paused' ? Math.max(0, p.ultimateUntil - at) : 0, uses: p.ultimateUses } }; }),
       winner: r.winner, reason: r.reason, lessons: [...r.lessons], attacks: r.attacks, blocks: r.blocks };
   }
   playerView(id: string) { const p = this.players.get(id); return p?.roomId ? this.view(p.roomId) : null; }
