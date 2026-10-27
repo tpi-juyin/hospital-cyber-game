@@ -47,7 +47,7 @@ body.arcade-theme .game-mode.duo{background:linear-gradient(#9af1df,#59c6c7);bor
 body.arcade-theme .game-mode.duo small{color:#285875}
 body.arcade-theme .party-button{display:flex;align-items:center;justify-content:center;gap:8px;min-height:45px;margin-top:2px;font-size:12px}
 body.arcade-theme .party-button span{font-size:9px;letter-spacing:1px;color:#a6bade;margin-left:8px}
-body.arcade-theme .menu-status{display:flex;justify-content:space-between;color:#98acce;font-size:9px;margin-top:20px;letter-spacing:.5px}
+body.arcade-theme .menu-status{display:flex;justify-content:flex-end;color:#98acce;font-size:9px;margin-top:20px;letter-spacing:.5px}
 body.arcade-theme .selection-heading{display:flex;align-items:center;gap:15px;margin:18px 0 17px}
 body.arcade-theme .selection-heading h1{font-size:27px;letter-spacing:2px;margin:4px 0 0;font-weight:950}
 body.arcade-theme .menu-back{height:39px;width:39px;border:2px solid #52658d;border-radius:10px;background:#23324e;color:#e3e9fc;box-shadow:0 3px 0 #070d1c;font-size:22px}

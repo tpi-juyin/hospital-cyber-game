@@ -1,5 +1,5 @@
 {
-  "gameVersion": "1.11.1",
+  "gameVersion": "1.21.0",
   "mode": "local",
   "platform": "darwin",
   "arch": "arm64",
@@ -20,6 +20,6 @@
   "hostControlledSurrender": true,
   "gracefulShutdown": true,
   "childProcessExited": true,
-  "generatedAt": "2026-10-05T09:25:21.547Z",
+  "generatedAt": "2026-10-27T02:58:29.750Z",
   "note": "HTTP and WebSocket checks only; no browser was opened or controlled."
 }

@@ -315,4 +315,16 @@ export class Engine {
       winner: r.winner, reason: r.reason, lessons: [...r.lessons], attacks: r.attacks, blocks: r.blocks };
   }
   playerView(id: string) { const p = this.players.get(id); return p?.roomId ? this.view(p.roomId) : null; }
+  // Structured storage preserves Infinity in bot timers, unlike JSON serialization.
+  snapshot() {
+    return { schema: 1, players: [...this.players], rooms: [...this.rooms], tokens: [...this.tokens], usedCodes: [...this.usedCodes], accepting: this.accepting, allowSurrender: this.allowSurrender, ultimateMode: this.ultimateMode, defaultDuration: this.defaultDuration, joinUrl:this.joinUrl };
+  }
+  restore(s: ReturnType<Engine['snapshot']>) {
+    if (s.schema !== 1) throw new Error('Unsupported saved activity');
+    this.players.clear(); this.rooms.clear();
+    for (const [k,v] of s.players) this.players.set(k,v);
+    for (const [k,v] of s.rooms) this.rooms.set(k,v);
+    this.tokens = new Map(s.tokens); this.usedCodes = new Set(s.usedCodes);
+    this.accepting=s.accepting; this.allowSurrender=s.allowSurrender; this.ultimateMode=s.ultimateMode; this.defaultDuration=s.defaultDuration; this.joinUrl=s.joinUrl;
+  }
 }

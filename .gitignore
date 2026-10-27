@@ -13,3 +13,8 @@ coverage/
 .dev.vars
 .dev.vars.*
 *.log
+
+dist-cloudflare/
+.wrangler/
+HOST_PASSWORD.txt
+results/

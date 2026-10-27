@@ -1,0 +1,21 @@
+import assert from 'node:assert/strict';import WebSocket from 'ws';import {mkdir,writeFile} from 'node:fs/promises';
+const base=process.env.GAME_URL||'http://127.0.0.1:8790', mode=process.env.MODE||'solo';let cookie='';const sockets=[];
+const wait=async predicate=>{const end=Date.now()+45000;while(Date.now()<end){if(predicate())return;await new Promise(r=>setTimeout(r,50));}throw Error('load condition timed out');};
+async function host(a){const r=await fetch(base+'/api/host/action',{method:'POST',headers:{Origin:base,Cookie:cookie,'Content-Type':'application/json'},body:JSON.stringify(a)});assert.equal(r.status,200);}
+function client(){const ws=new WebSocket(base.replace(/^http/,'ws')+'/ws/player',{headers:{Origin:base}});sockets.push(ws);const c={ws,session:null,room:null,seq:0,ack:0,pending:new Map(),received:0,attempted:0,accepted:0,rejected:0,errors:0,rtts:[],states:0};
+ c.send=a=>new Promise(resolve=>{const id=++c.ack;c.pending.set(id,{at:performance.now(),a,resolve});ws.send(JSON.stringify({event:'action',data:a,id}));});
+ c.ready=new Promise((resolve,reject)=>{ws.on('open',()=>ws.send(JSON.stringify({event:'hello',data:{}})));ws.on('error',()=>{c.errors++;reject(Error('socket error'));});ws.on('message',raw=>{if(String(raw)==='pong')return;const m=JSON.parse(raw);if(m.event==='session')c.session=m.data;if(m.event==='room'){c.room=m.data;c.states++;}if(m.event==='connect')resolve(c);if(m.event==='connect_error')reject(Error(m.data.code));if(m.event==='ack'){const p=c.pending.get(m.id);if(p){c.pending.delete(m.id);if(p.a.kind==='tap'){c.received++;c.rtts.push(performance.now()-p.at);if(m.data.ok)c.accepted++;else c.rejected++;}p.resolve(m.data);}}});});
+ const heart=setInterval(()=>{if(ws.readyState===1)ws.send('ping');},5000);const taps=setInterval(()=>{if(c.room?.phase==='playing'){c.attempted++;void c.send({kind:'tap',roundId:c.room.roundId,seq:++c.seq});}},170);
+ ws.on('close',()=>{clearInterval(heart);clearInterval(taps);});return c;
+}
+try{
+ const r=await fetch(base+'/host/login',{method:'POST',headers:{Origin:base,'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({password:process.env.HOST_PASSWORD}),redirect:'manual'});assert.equal(r.status,303);cookie=r.headers.get('set-cookie').split(';')[0];
+ await host({kind:'stop'});await host({kind:'accepting',value:true});await host({kind:'duration',value:30});
+ const players=await Promise.all(Array.from({length:30},()=>client().ready));
+ if(mode==='solo'){await Promise.all(players.map((c,i)=>c.send({kind:'create',mode:'solo',role:i%2?'attack':'defense',startImmediately:true})));}
+ else {for(let i=0;i<30;i+=2){assert.equal((await players[i].send({kind:'create',mode:'duo',role:'attack'})).ok,true);await wait(()=>players[i].room);assert.equal((await players[i+1].send({kind:'join',code:players[i].room.code})).ok,true);}await Promise.all(players.map(c=>c.send({kind:'ready',ready:true})));}
+ await wait(()=>players.every(c=>c.room?.phase==='ended'));await new Promise(r=>setTimeout(r,700));
+ const lat=players.flatMap(c=>c.rtts).sort((a,b)=>a-b), percentile=p=>Math.round(lat[Math.floor((lat.length-1)*p)]*100)/100;
+ const summary={at:new Date().toISOString(),version:JSON.parse(await (await import('node:fs/promises')).readFile(new URL('../package.json',import.meta.url),'utf8')).version,target:base,mode,players:30,rooms:new Set(players.map(c=>c.room.id)).size,completed:players.filter(c=>c.room.phase==='ended').length,sent:players.reduce((n,c)=>n+c.attempted,0),acked:players.reduce((n,c)=>n+c.received,0),accepted:players.reduce((n,c)=>n+c.accepted,0),rejected:players.reduce((n,c)=>n+c.rejected,0),errors:players.reduce((n,c)=>n+c.errors,0),p50:percentile(.5),p95:percentile(.95),p99:percentile(.99),states:players.reduce((n,c)=>n+c.states,0)};
+ assert.equal(summary.completed,30);assert.equal(summary.errors,0);assert.equal(summary.sent,summary.acked);assert.ok(summary.accepted>1000);await mkdir('results',{recursive:true});await writeFile(`results/load-${mode}.json`,JSON.stringify(summary,null,2));console.log(summary);
+}finally{for(const ws of sockets)ws.close();if(cookie){await host({kind:'stop'});await host({kind:'duration',value:60});await host({kind:'accepting',value:true});}}

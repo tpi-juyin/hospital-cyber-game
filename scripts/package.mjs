@@ -30,10 +30,9 @@ if (!existsSync(metadataPath)) await writeFile(metadataPath, JSON.stringify(awai
 const cloudRelease = JSON.parse(await readFile(metadataPath, 'utf8'));
 const cloudLicense = join(cache, `cloudflared-${CLOUDFLARED_VERSION}-LICENSE`);
 await download(`https://raw.githubusercontent.com/cloudflare/cloudflared/${CLOUDFLARED_VERSION}/LICENSE`, cloudLicense);
+if (process.platform !== 'darwin' || process.arch !== 'arm64') throw new Error('本機主持包僅支援 Apple 晶片 Mac。');
 const targets = [
-  { name: 'windows-x64', node: `node-v${NODE_VERSION}-win-x64.zip`, cloud: 'cloudflared-windows-amd64.exe', windows: true },
-  { name: 'macos-arm64', node: `node-v${NODE_VERSION}-darwin-arm64.tar.gz`, cloud: 'cloudflared-darwin-arm64.tgz', windows: false },
-  { name: 'macos-x64', node: `node-v${NODE_VERSION}-darwin-x64.tar.gz`, cloud: 'cloudflared-darwin-amd64.tgz', windows: false },
+  { name: 'macos-arm64', node: `node-v${NODE_VERSION}-darwin-arm64.tar.gz`, cloud: 'cloudflared-darwin-arm64.tgz' },
 ];
 const lock = JSON.parse(await readFile('package-lock.json', 'utf8'));
 let licenses = '# 第三方套件與授權\n\n此清單含隨應用程式分發的正式依賴及其授權文字。Node.js 與 cloudflared 的完整授權另見 licenses/。\n';
@@ -57,8 +56,7 @@ for (const target of targets) {
   const cloudArchive = join(cache, `${CLOUDFLARED_VERSION}-${target.cloud}`);
   const cloudHash = await download(cloudAsset.browser_download_url, cloudArchive, cloudAsset.digest.slice(7));
   const work = join(cache, `extract-${target.name}`); await mkdir(work, { recursive: true });
-  if (target.windows) execFileSync('unzip', ['-qo', nodeArchive, '-d', work]);
-  else execFileSync('tar', ['-xzf', nodeArchive, '-C', work]);
+  execFileSync('tar', ['-xzf', nodeArchive, '-C', work]);
   const nodeFolder = join(work, target.node.replace(/\.zip$|\.tar\.gz$/g, ''));
   const name = `hospital-cyber-game-${target.name}`; const out = join(release, name);
   await rm(out, { recursive: true, force: true });
@@ -68,15 +66,14 @@ for (const target of targets) {
   await cp(join(root, 'scripts/launch.mjs'), join(out, 'scripts/launch.mjs'));
   await cp(join(root, 'scripts/tunnel-controller.mjs'), join(out, 'scripts/tunnel-controller.mjs'));
   await cp(join(root, 'scripts/open-host.mjs'), join(out, 'scripts/open-host.mjs'));
-  const launch = target.windows ? 'start-game.cmd' : 'start-game.command';
-  let launcher = await readFile(join(root, launch), 'utf8'); if (target.windows) launcher = launcher.replace(/\r?\n/g, '\r\n');
-  await writeFile(join(out, launch), launcher); if (!target.windows) await chmod(join(out, launch), 0o755);
-  await cp(join(nodeFolder, target.windows ? 'node.exe' : 'bin/node'), join(out, 'runtime', target.windows ? 'node.exe' : 'node'));
+  const launch = 'start-game.command';
+  const launcher = await readFile(join(root, launch), 'utf8');
+  await writeFile(join(out, launch), launcher); await chmod(join(out, launch), 0o755);
+  await cp(join(nodeFolder, 'bin/node'), join(out, 'runtime', 'node'));
   await cp(join(nodeFolder, 'LICENSE'), join(out, 'licenses/Node.js-LICENSE.txt'));
-  if (target.windows) await cp(cloudArchive, join(out, 'runtime/cloudflared.exe'));
-  else { const cloudWork = join(work, 'cloud'); await mkdir(cloudWork, { recursive: true }); execFileSync('tar', ['-xzf', cloudArchive, '-C', cloudWork]); await cp(join(cloudWork, 'cloudflared'), join(out, 'runtime/cloudflared')); await chmod(join(out, 'runtime/node'), 0o755); await chmod(join(out, 'runtime/cloudflared'), 0o755); }
+  { const cloudWork = join(work, 'cloud'); await mkdir(cloudWork, { recursive: true }); execFileSync('tar', ['-xzf', cloudArchive, '-C', cloudWork]); await cp(join(cloudWork, 'cloudflared'), join(out, 'runtime/cloudflared')); await chmod(join(out, 'runtime/node'), 0o755); await chmod(join(out, 'runtime/cloudflared'), 0o755); }
   await cp(cloudLicense, join(out, 'licenses/cloudflared-LICENSE.txt'));
-  await writeFile(join(out, 'VERSION.json'), JSON.stringify({ game: GAME_VERSION, platform: target.name, node: NODE_VERSION, cloudflared: CLOUDFLARED_VERSION, archiveChecksums: { node: nodeHash, cloudflared: cloudHash }, nativeExecution: target.name === 'macos-arm64' ? 'See docs/TEST_RESULTS.md; packaging is not proof of execution.' : '尚未在對應原生系統驗證；請先預演。', builtAt: new Date().toISOString() }, null, 2) + '\n');
+  await writeFile(join(out, 'VERSION.json'), JSON.stringify({ game: GAME_VERSION, platform: target.name, node: NODE_VERSION, cloudflared: CLOUDFLARED_VERSION, archiveChecksums: { node: nodeHash, cloudflared: cloudHash }, nativeExecution: 'See docs/TEST_RESULTS.md; packaging is not proof of execution.', builtAt: new Date().toISOString() }, null, 2) + '\n');
   const archive = join(release, `${name}.zip`);
   await rm(archive, { force: true });
   // Python's zipfile marks non-ASCII filenames as UTF-8; macOS /usr/bin/zip does not.
@@ -99,4 +96,4 @@ with ZipFile(archive, 'w', ZIP_DEFLATED, compresslevel=6) as z:
 }
 await writeFile(join(release, 'SHA256SUMS.txt'), archives.join('\n') + '\n');
 execFileSync('python3', [join(root, 'scripts/verify-packages.py')], { stdio: 'inherit' });
-console.log('三種主持包已輸出至 release/。原生跨平台執行驗證狀態請見測試報告。');
+console.log('Apple ARM 主持包已輸出至 release/。測試結果請見 docs/TEST_RESULTS.md。');

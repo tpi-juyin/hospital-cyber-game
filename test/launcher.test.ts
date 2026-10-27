@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { spawn } from 'node:child_process';
 
-test('actual launcher rebuilds only its tunnel child, preserves host service and cleans up on stop', { skip: process.platform === 'win32', timeout: 20000 }, async t => {
+test('actual launcher rebuilds only its tunnel child, preserves host service and cleans up on stop', { skip: process.platform !== 'darwin' || process.arch !== 'arm64', timeout: 20000 }, async t => {
   const root = await mkdtemp(join(tmpdir(), '遊戲 rebuild '));
   for (const dir of ['scripts', 'runtime', 'dist', 'dist-server']) await mkdir(join(root, dir));
   for (const file of ['scripts/launch.mjs', 'scripts/tunnel-controller.mjs', 'scripts/open-host.mjs', 'dist-server/game.cjs']) await cp(resolve(file), join(root, file));

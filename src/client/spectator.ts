@@ -1,4 +1,6 @@
 import { fullscreenButton } from './fullscreen';
+import { pushedFetch } from './transport';
+const watchFeed=pushedFetch('spectator');
 import { GAME_VERSION } from '../shared/version';
 import { type SpectatorRoomView, type SpectatorSummary } from '../shared/protocol';
 import { escape as esc, icon } from './art';
@@ -52,7 +54,7 @@ async function poll() {
   const version = generation, roomId = selected;
   const timeout = setTimeout(() => controller.abort(), 5000);
   try {
-    const response = await fetch(roomId ? `/api/spectate/rooms/${encodeURIComponent(roomId)}` : '/api/spectate/rooms', { cache: 'no-store', signal: controller.signal });
+    const response = await watchFeed(roomId ? `/api/spectate/rooms/${encodeURIComponent(roomId)}` : '/api/spectate/rooms', { signal: controller.signal });
     if (version !== generation || stopped) return;
     if (response.status === 404 && roomId) { summaries = summaries.filter(r => r.id !== roomId); exit(); status.textContent = '這場對戰已關閉，請選擇其他對戰。'; return; }
     if (!response.ok) throw new Error('無法取得戰況');

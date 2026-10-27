@@ -135,7 +135,7 @@
 @keyframes ultimate-alert{50%{box-shadow:0 0 0 4px #35b1a554;transform:translateY(-2px)}}
 .reduced-motion .ultimate-button{animation:none!important}
 @media(prefers-reduced-motion:reduce){.ultimate-button{animation:none!important}}
-@media(max-width:360px){.with-ultimate .strategy-button b{font-size:11px}.with-ultimate .strategy-button small{font-size:8px}.tap-counter #ultimate-status{font-size:9px}}
+@media(max-width:360px){.with-ultimate .strategy-button b{font-size:11px}.with-ultimate .strategy-button small{font-size:8px}}
 
 /* Traffic packets arrive in waves; rate limiting still admits a small flow. */
 .fx-attack-1 .traffic-wave{animation-delay:.12s;inset:8px 0 -8px 0}

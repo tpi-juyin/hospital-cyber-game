@@ -50,7 +50,7 @@ function render(s: HostView) {
   const cloud = s.hostingMode === 'cloud';
   document.querySelector<HTMLElement>('#cloud-logout')!.hidden = !cloud;
   document.querySelector('#stop')!.textContent = cloud ? '結束活動' : '結束活動並停止服務';
-  if (cloud) document.querySelector('.host-footnote')!.textContent = '遊戲由雲端運行；結束活動會清空對戰與玩家，仍可再次開放加入。免費服務休眠或重新部署會清除目前活動。';
+  if (cloud) document.querySelector('.host-footnote')!.textContent = persistentActivity ? '遊戲由雲端運行；結束活動會清空對戰與玩家，仍可再次開放加入。活動設定會保留；服務重新啟動時，進行中的對戰中止且不計勝負。' : '遊戲由雲端運行；結束活動會清空對戰與玩家，仍可再次開放加入。免費服務休眠或重新部署會清除目前活動。';
   const rebuild = document.querySelector<HTMLButtonElement>('#rebuild-tunnel')!;
   // 暫時隱藏公開連線重建入口，保留功能供日後恢復。
   rebuild.hidden = true;
@@ -125,8 +125,10 @@ document.querySelector('#stop')!.addEventListener('click', () => {
 });
 async function poll() {
   if (stopped) return;
-  try { const res = await fetch('/api/host/state', { cache: 'no-store', signal: AbortSignal.timeout(4000) }); if (res.status === 401 && location.pathname.startsWith('/host')) { location.assign('/host'); return; } if (!res.ok) throw new Error('主持憑證失效，請使用啟動器的連結重新開啟。'); const data = await res.json(); stale = false; render(data); error(''); }
+  try { const res = await hostFeed('/api/host/state', { signal: AbortSignal.timeout(4000) }); if (res.status === 401 && location.pathname.startsWith('/host')) { location.assign('/host'); return; } if (!res.ok) throw new Error(location.pathname.startsWith('/host') ? '請重新登入指揮中心。' : '主持憑證失效，請使用啟動器的連結重新開啟。'); const data = await res.json(); stale = false; render(data); error(''); }
   catch (e) { stale = true; qrDialog.close(); document.querySelector<HTMLButtonElement>('#zoom-qr')!.disabled = true; document.querySelector<HTMLButtonElement>('#rebuild-tunnel')!.disabled = true; monitor.connection(true); error(e instanceof TypeError || (e as Error).name === 'TimeoutError' ? '暫時無法連線至遊戲服務，請確認啟動視窗仍在執行。' : (e as Error).message); }
   setTimeout(() => void poll(), 500);
 }
+import { pushedFetch, persistentActivity } from './transport';
+const hostFeed=pushedFetch('host');
 void poll();

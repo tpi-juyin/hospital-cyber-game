@@ -5,12 +5,12 @@ const modulePath = '../scripts/open-host.mjs';
 const { openHostPage } = await import(modulePath);
 
 test('host opener uses default OS handler with a single URL argument and no shell', () => {
-  for (const platform of ['darwin', 'win32']) {
+  for (const platform of ['darwin']) {
     const child = Object.assign(new EventEmitter(), { unref() {} });
     const calls: unknown[][] = []; const logs: string[] = [];
     const url = 'http://127.0.0.1:4567/?key=private&test=value';
     openHostPage(url, { platform, spawnProcess: (...args: unknown[]) => { calls.push(args); return child; }, log: (s: string) => logs.push(s) });
-    assert.deepEqual(calls, [[platform === 'darwin' ? '/usr/bin/open' : 'rundll32.exe', platform === 'darwin' ? [url] : ['url.dll,FileProtocolHandler', url], { stdio: 'ignore', windowsHide: true, shell: false }]]);
+    assert.deepEqual(calls, [['/usr/bin/open', [url], { stdio: 'ignore', windowsHide: true, shell: false }]]);
     child.emit('exit', 0); assert.deepEqual(logs, []);
   }
 });

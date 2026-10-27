@@ -1,5 +1,26 @@
 # 醫院資安攻防戰
 
+## 共用程式與三種執行方式（1.21.0）
+
+唯一原始碼來源是本資料夾 `hospital-cyber-game`。前端、動畫／音效、資安知識、戰鬥引擎與登入頁共用。舊 `hospital-cyber-cloudflare` 不再維護另一份程式。
+
+| 目標 | 建置 | 執行／部署 | 產物 |
+|---|---|---|---|
+| Apple ARM 本機 | `npm run build:node` | `npm run package` 後雙擊主持包 `start-game.command` | `dist`、`dist-server`、`release` |
+| Render | `npm run build:node` | `npm run start:cloud`（伺服器） | `dist`、`dist-server` |
+| Cloudflare | `npm run build:cloudflare` | `npm run dev:cloudflare`（本機模擬）；`npm run deploy:cloudflare`（發布） | `dist-cloudflare` |
+
+`npm run build:all` 只建置，不會發布。`npm test` 執行共用及 Node 整合測試。Cloudflare 本機測試先啟動模擬服務，再以 `node --env-file=.dev.vars test/cloudflare-integration.mjs` 執行。測試會重設測試站的活動，勿將 GAME_URL 指向使用中的正式站。
+
+Node 使用 Socket.IO 與 HTTP 戰況讀取；Cloudflare 使用原生 WebSocket 與戰況推送。Vite 在建置時選擇連線模組，同一畫面無需分別修改。兩種產物分開存放，Cloudflare 建置不會覆蓋本機／Render 畫面。
+
+各平台保留獨立房間、密碼和活動設定。Render／本機重啟會重設活動；Cloudflare 會保存設定與快照，服務重啟時進行中的對戰不計勝負。主持端文案會依部署方式切換。
+
+主持密碼只放在 Render 環境變數或 Cloudflare Secret `HOST_PASSWORD`；`.dev.vars` 只供本機測試，已排除版本控制。部署 Cloudflare 時請保留後台已修改的密碼，不要拿舊本機密碼覆蓋。網址由目前請求來源產生，改子網域不需修改遊戲碼。
+
+建置及測試不會自動發布；每個平台的更新需個別執行。發布前先閱讀 `docs/SHARED_ARCHITECTURE.md`。
+
+
 手機掃描即可玩的卡通資安遊戲。支援單人 VS 電腦、雙人對戰、四位數房號與 30 人同時在線。預設每局 60 秒，可調整 30～120 秒。遊戲只模擬攻防，不接觸醫院系統。
 
 結算的資安情報預設展開，共有 6 個主題、各 2 則知識（共 12 則）。依本局最常使用的攻擊與防禦，各從對應主題尚未抽過的提醒隨機抽出 1 則，兩則皆抽完後再重新洗牌，維持兩點短文；同局重新整理或重連不會換內容。抽選紀錄跟隨房主的本次玩家身分，保留至再戰或另開房；雙方共用同局內容，兩輪交界仍可能重複。內容與查核來源見 [資安知識說明](docs/SECURITY_KNOWLEDGE.md)。
@@ -12,29 +33,29 @@
 
 ## 使用可攜式主持包
 
-1. Windows x64 使用 `hospital-cyber-game-windows-x64.zip`；Apple 晶片 Mac 使用 `macos-arm64`；Intel Mac 使用 `macos-x64`。
+1. 本機主持僅支援 Apple 晶片 Mac，使用 `release/hospital-cyber-game-macos-arm64` 或同名 ZIP。
 2. 完整解壓縮到可寫入的本機資料夾，不要在 ZIP 內直接啟動。
-3. Windows 雙擊 `start-game.cmd`；Mac 雙擊 `start-game.command`。首次請依作業系統提示允許執行，受管理電腦需符合院內程式執行政策。
+3. 雙擊 `start-game.command`。首次請依作業系統提示允許執行，受管理電腦需符合院內程式執行政策。
 4. 保持啟動視窗開啟；服務準備好後會用系統預設瀏覽器自動開啟指揮中心，不必等待公開通道連線完成。若未自動開啟，可手動開啟視窗顯示的「指揮中心網址」。此連結包含本機主持憑證，請勿傳給玩家。
 5. 等待指揮中心顯示「公開入口已就緒」，再讓手機掃 QR Code。用手機關閉 Wi-Fi、開啟行動網路先試玩。
 6. 單人選擇代號及角色後，按「出發」直接倒數；結算按「再次對戰」回到選角頁，可換角色或代號，再按「出發」才開局。雙人先設定代號、建立房間，邀請朋友後在房內自由選角；可用預設暱稱或骰子換名。「輸入房號，加入朋友」可輸入四位房號；掃房間 QR Code 或開啟邀請連結會直接進入「加入房間」取名頁；不需輸入房號，選好代號後按金色「點此加入」即可進房。房間滿員、已結束或失效會顯示原因，可留在原頁重試或返回主選單。
-7. 活動結束按指揮中心「結束活動並停止服務」，或在啟動視窗按 Ctrl+C。先正常停止再關閉終端機；Windows 直接關閉視窗時須確認程序已結束。
+7. 活動結束按指揮中心「結束活動並停止服務」，或在啟動視窗按 Ctrl+C。先正常停止再關閉終端機。
 
 主持包內含 Node.js 24 LTS、cloudflared 與全部遊戲依賴，不需要 npm、Docker、Homebrew、Cloudflare 帳號或網域，也不需在現場下載套件。可移動整個資料夾，支援中文與空白路徑。
 
-Windows 以 Windows 11 x64 為驗收目標；Mac 的 Node.js 執行環境最低 macOS 13.5。Windows ARM、32 位元 Windows 與 Linux 不在本版交付範圍。**打包成功不代表原生系統已驗證；目前實測範圍請看 `docs/TEST_RESULTS.md`。**
+本機主持包以這台 Apple 晶片 Mac 為測試對象；Node.js 執行環境最低 macOS 13.5。不再提供 Windows／Intel Mac 主持包。雲端 Render 的 Linux 伺服器仍受支援。
 
 ## 版本與更新
 
-指揮中心、投影畫面與玩家頁左上方顯示版本號，目前原始碼為 v1.20.0。版本由同一份專案版本資料產生。
+指揮中心、投影畫面與玩家頁左上方顯示版本號，目前原始碼為 v1.21.1。版本由同一份專案版本資料產生。
 
-`release/` 的 Windows x64、macOS ARM64 與 macOS x64 三種主持包已更新為 v1.11.2，包含自動開啟指揮中心、重建公開連線、掃描文案及 QR Code 放大功能。Apple 晶片 Mac 已通過本機啟動與遊戲連線檢查；Windows／Intel Mac 尚未原生執行，請先在活動電腦彩排。
+`release/` 僅提供本次共用程式建置的 Apple ARM 主持包。執行驗證見 `docs/UNIFIED_TEST_RESULTS.md`，舊測試報告只保留歷史紀錄。
 
 更新主持包前請先結束活動並停止服務，再解壓新版並重新啟動，通知玩家掃描新的 QR Code。若直接在執行中的原始碼資料夾建置新版，指揮中心會提示重新啟動；僅重新整理網頁無法更新執行中的伺服器。
 
 ## 重建公開連線
 
-指揮中心 QR Code 下方提供「重建公開連線」。按下後以遊戲風格確認視窗提醒：目前對戰中止且不計勝負、所有房間與玩家連線清除，玩家需要重新掃描。取消不會執行。
+目前指揮中心暫時隱藏「重建公開連線」按鈕，啟動器仍保留此能力。若日後恢復顯示，按下後以遊戲風格確認視窗提醒：目前對戰中止且不計勝負、所有房間與玩家連線清除，玩家需要重新掃描。取消不會執行。
 
 確認後暫停新玩家加入並撤下 QR Code，只重啟 cloudflared 通道；指揮中心網址、遊戲服務與活動設定保持可用。新網址通過健康檢查後顯示 QR Code，恢復重建前的加入設定；若原本暫停加入，仍維持暫停。收到通知的舊玩家頁會顯示重新掃描提示；已斷線或未收到通知的玩家請依主持人指示掃新碼。舊玩家憑證失效，房號不會於同次活動重複發放。
 
@@ -136,21 +157,21 @@ npm run test:load
 npm run start:local
 ```
 
-`start:local` 只提供同一電腦的測試入口，手機不能藉此跨網路加入。公開主持使用 `npm start`，需有 cloudflared 或 `runtime/` 內的執行檔。啟動器不會自動操作瀏覽器。
+`start:local` 只提供同一電腦的測試入口，手機不能藉此跨網路加入。公開主持使用 `npm start`，需有 cloudflared 或 `runtime/` 內的執行檔。啟動器會開啟系統預設瀏覽器的指揮中心頁。
 
 ```sh
 npm run package
 ```
 
-打包需要網路及 `tar`、`unzip`、Python 3，目前打包工具以 macOS／Linux 執行。固定下載 Node.js 24.21.0、cloudflared 2026.9.1，校驗 Node 官方 SHA256 與 GitHub release 的資產 digest。啟動檔統一使用英文檔名，並輸出版本資料與 SHA256SUMS；執行主持包時不需這些打包工具。
+打包使用 `tar` 與 Python 3，僅在 Apple ARM Mac 執行；快取缺少執行環境時才需下載。固定下載 Node.js 24.21.0、cloudflared 2026.9.1，校驗 Node 官方 SHA256 與 GitHub release 的資產 digest。啟動檔統一使用英文檔名，並輸出版本資料與 SHA256SUMS；執行主持包時不需這些打包工具。
 
-程式採記憶體狀態，服務重啟清空，不收集病人資料。第三方套件與執行環境授權見 `THIRD_PARTY_LICENSES.md` 與主持包的 `licenses/`。
+Node.js 版採記憶體狀態，服務重啟清空；Cloudflare 保存活動快照。兩者都不收集病人資料。第三方套件與執行環境授權見 `THIRD_PARTY_LICENSES.md` 與主持包的 `licenses/`。
 
 啟動器可加上 `--no-open` 停用自動開啟瀏覽器，例如 `npm start -- --no-open`；自動化檢查均使用此參數，不會操作瀏覽器。重建公開連線不會再次開啟指揮中心。
 
 ## Render 雲端版（v1.13.0）
 
-使用固定 HTTPS 網址及 `/host` 密碼登入指揮中心，不需筆電持續執行或 Cloudflare 通道。服務啟動後預設暫停新玩家加入，主持人可開放加入、結束活動並再次開放。設定與操作見 [Render 部署說明](docs/RENDER.md)。現有可攜式 ZIP 維持 v1.11.2，本次未重製主持包。
+使用固定 HTTPS 網址及 `/host` 密碼登入指揮中心，不需筆電持續執行或 Cloudflare 通道。服務啟動後預設開放新玩家加入，主持人可開放加入、結束活動並再次開放。設定與操作見 [Render 部署說明](docs/RENDER.md)。本機主持包改為僅支援 Apple ARM。
 
 ## 授權
 

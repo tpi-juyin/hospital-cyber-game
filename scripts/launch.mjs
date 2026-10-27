@@ -7,6 +7,7 @@ import { createTunnelController } from './tunnel-controller.mjs';
 import { openHostPage } from './open-host.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+if (process.platform !== 'darwin' || process.arch !== 'arm64') { console.error('本機主持版僅支援 Apple 晶片 Mac；雲端請使用 start:cloud。'); process.exit(1); }
 const localOnly = process.argv.includes('--local-only');
 const autoOpen = !process.argv.includes('--no-open');
 const runtimeDir = join(root, '.runtime'); const logDir = join(root, 'logs');
@@ -14,8 +15,8 @@ const instancePath = join(runtimeDir, 'instance.json');
 mkdirSync(runtimeDir, { recursive: true }); mkdirSync(logDir, { recursive: true });
 const runId = randomBytes(8).toString('hex');
 const logPath = join(logDir, `game-${new Date().toISOString().replace(/[:.]/g, '-')}.log`);
-const node = existsSync(join(root, 'runtime', process.platform === 'win32' ? 'node.exe' : 'node')) ? join(root, 'runtime', process.platform === 'win32' ? 'node.exe' : 'node') : process.execPath;
-const tunnelBin = join(root, 'runtime', process.platform === 'win32' ? 'cloudflared.exe' : 'cloudflared');
+const node = existsSync(join(root, 'runtime', 'node')) ? join(root, 'runtime', 'node') : process.execPath;
+const tunnelBin = join(root, 'runtime', 'cloudflared');
 const cloudflared = existsSync(tunnelBin) ? tunnelBin : 'cloudflared';
 let game, playerUrl = '', stopping = false;
 function log(message) { const line = `[${new Date().toISOString()}] ${message}`; console.log(message); appendFileSync(logPath, line + '\n'); }

@@ -6,7 +6,7 @@ import zipfile
 
 root = Path(__file__).resolve().parent.parent
 checks = dict(line.split('  ')[::-1] for line in (root / 'release/SHA256SUMS.txt').read_text().splitlines())
-assert len(checks) == 3, 'Expected all three platform archives'
+assert set(checks) == {'hospital-cyber-game-macos-arm64.zip'}, 'Only Apple ARM is supported'
 for name, expected in checks.items():
     archive = root / 'release' / name
     digest = hashlib.sha256()
@@ -27,13 +27,9 @@ for name, expected in checks.items():
                 assert z.read(base + '/' + rel) == file.read_bytes(), (name, rel)
         assert json.loads(z.read(base + '/VERSION.json'))['node'] == '24.21.0'
         assert json.loads(z.read(base + '/VERSION.json'))['game'] == json.loads((root / 'package.json').read_text())['version']
-        launcher = 'start-game.command' if 'macos' in name else 'start-game.cmd'
+        launcher = 'start-game.command'
         assert base + '/' + launcher in names
         assert not any(n.endswith(('/啟動遊戲.command', '/啟動遊戲.cmd')) for n in names)
-        if 'macos' in name:
-            for rel in ['runtime/node', 'runtime/cloudflared', launcher]:
-                assert (z.getinfo(base + '/' + rel).external_attr >> 16) & 0o111
-        else:
-            cmd = z.read(base + '/' + launcher)
-            assert b'\r\n' in cmd and b'\n' not in cmd.replace(b'\r\n', b'')
+        for rel in ['runtime/node', 'runtime/cloudflared', launcher]:
+            assert (z.getinfo(base + '/' + rel).external_attr >> 16) & 0o111
         print(f'{name}: SHA256, ZIP, source parity and English launcher metadata PASS')
