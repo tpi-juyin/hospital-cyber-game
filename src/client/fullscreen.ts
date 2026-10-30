@@ -32,8 +32,22 @@ function showHelp() {
   const previous = document.activeElement as HTMLElement | null;
   const dialog = document.createElement('dialog');
   dialog.id = 'fullscreen-help'; dialog.setAttribute('aria-labelledby', 'fullscreen-help-title');
-  const apple = /iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent);
-  dialog.innerHTML = `<h2 id="fullscreen-help-title">更大的遊戲畫面</h2><p>此瀏覽器目前無法直接開啟全螢幕，仍可照常遊玩。</p>${apple ? '<ol><li>在 iPhone／iPad 的 Safari 點「分享」。</li><li>選擇「加入主畫面」；若有「作為網頁 App 開啟」，請保持開啟。</li><li>回到裝置主畫面，點遊戲圖示進入。</li></ol><p>Mac 可使用 Safari 的「顯示方式 → 進入全螢幕」。</p>' : '<p>可從瀏覽器選單尋找「安裝應用程式」、「加入主畫面」或「全螢幕」；實際選項依瀏覽器而定。</p>'}<p class="fullscreen-help-note">建議開戰前操作。從主畫面重新開啟不會自動接續目前對局，遊戲仍需要網路。</p><button type="button" autofocus>知道了，返回遊戲</button>`;
+  const ua = navigator.userAgent;
+  // iPadOS desktop browsing identifies as Macintosh, but still has touch input.
+  const ios = /iPad|iPhone|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+  const mac = /Macintosh|Mac OS X/.test(ua);
+  const safari = /Safari/.test(ua) && !/Chrome|Chromium|Edg|OPR|CriOS|FxiOS/.test(ua);
+  let instructions: string;
+  if (ios) {
+    instructions = '<ol><li>在 Safari 點「分享」。</li><li>選擇「加入主畫面」；若有「作為網頁 App 開啟」，請保持開啟。</li><li>回到裝置主畫面，點遊戲圖示進入。</li></ol>';
+  } else if (/Android/.test(ua)) {
+    instructions = '<p>開啟瀏覽器選單，選擇「加入主畫面」或「安裝應用程式」，再從主畫面的遊戲圖示開啟。</p>';
+  } else if (mac && safari) {
+    instructions = '<p>在 Safari 上方選單選擇「顯示方式 → 進入全螢幕」。</p>';
+  } else {
+    instructions = '<p>開啟瀏覽器選單，尋找「全螢幕」選項。</p>';
+  }
+  dialog.innerHTML = `<h2 id="fullscreen-help-title">更大的遊戲畫面</h2><p>此瀏覽器目前無法直接開啟全螢幕，仍可照常遊玩。</p>${instructions}<button type="button" autofocus>知道了，返回遊戲</button>`;
   dialog.querySelector('button')!.addEventListener('click', () => dialog.close());
   dialog.addEventListener('close', () => { dialog.remove(); if (previous?.isConnected) previous.focus(); });
   document.body.append(dialog); dialog.showModal();

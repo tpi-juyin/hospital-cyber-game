@@ -16,7 +16,7 @@ test('fullscreen is explicit, uses the stable root, survives scenes and handles 
  click();await settle();assert.equal(active,w.document.documentElement);assert.equal(w.document.querySelector('button')!.getAttribute('aria-pressed'),'true');
  w.eval('mount()');assert.equal(w.document.querySelector('button')!.getAttribute('aria-pressed'),'true');click();await settle();assert.equal(active,null);
  reject=true;click();await settle();assert.match(w.document.querySelector('#fullscreen-notice')!.textContent!,/無法/);assert.equal(w.document.querySelector<HTMLButtonElement>('button')!.disabled,false);
- Object.defineProperty(w.document,'fullscreenEnabled',{value:false});const count=calls;click();assert.equal(calls,count);assert.ok(w.document.querySelector('#fullscreen-help')!.hasAttribute('open'));assert.match(w.document.querySelector('#fullscreen-help')!.textContent!,/主畫面/);
+ Object.defineProperty(w.document,'fullscreenEnabled',{value:false});const count=calls;click();assert.equal(calls,count);assert.ok(w.document.querySelector('#fullscreen-help')!.hasAttribute('open'));assert.match(w.document.querySelector('#fullscreen-help')!.textContent!,/全螢幕/);
 });
 
 test('Safari prefixed fullscreen and standalone mode', async t => {
