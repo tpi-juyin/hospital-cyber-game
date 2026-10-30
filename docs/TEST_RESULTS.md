@@ -277,3 +277,14 @@ node scripts/smoke-portable.mjs --public
 - 尚未集滿時提示連點集氣，金黃提示放在可操作的連點按鈕；施放中顯示剩餘秒數及連點補血／補盾，用完則提示持續補盾。
 - 所有戰鬥數值維持不變。正式建置及 105 項測試通過，涵蓋集氣、就緒、施放中及次數用完的提示切換。
 - 同步本機 macOS ARM64 解壓縮主持資料夾；未啟動主持，未操作瀏覽器，手機版面待使用者試玩。未更新 ZIP、其他平台主持包、GitHub 或雲端。
+
+
+## 2026-10-29 主持包與 Render Node 安全更新
+
+- 主持包內附 Node.js 從 24.21.0 升至官方安全版 24.22.1，遊戲版本維持 1.21.1；cloudflared 維持 2026.9.1。官方 Apple ARM tar.gz SHA256：89c682593d76cd44233fa53b1563264e7de9cbb189cad169135c5b4fadfbc0a7，已與 nodejs.org 官方 SHASUMS256.txt 及發行頁交叉核對。
+- 舊主持資料夾、ZIP、SHA256SUMS 與修改前設定保留在 release/backups/20261029-node24.21.0-before-upgrade/。
+- 新 ZIP 實際解壓至中文與空白路徑，以內附 Node 24.22.1、PATH=/usr/bin:/bin 執行既有 local smoke：主持驗證、資產、玩家隔離、WebSocket、單人開始、點擊集氣、大招與電腦反制、5 秒結束、投降、策略知識、再戰選角、正常停止及子程序清理皆通過。報告見 portable-local-results.json。未建立公開通道，未操作線上遊戲活動。
+- Render 原部署 dep-dbg1hvuc6qcc73e1l490 的 10/27 11:22:49 GMT+8 日誌確認 Node 24.21.0；Dashboard NODE_VERSION 原值亦確認為 24.21.0。僅改為 24.22.1，保留自動部署關閉、密碼及其他設定。
+- 使用原 Live commit 47a3cd1dc6eb192d37e8f5d9757606b969bd189b 重建，未發布本機變更。新部署 dep-dbhged2fngtc73bjpfvg，10/29 16:43:32 GMT+8 建立、16:43:44 確認 Using Node.js version 24.22.1 via environment variable NODE_VERSION、16:44:18 service is live，Dashboard Deploy succeeded | Live。
+- 16:45:14 GMT+8 公開 /api/health 回應 200、ok=true、game 1.21.1；首頁與 /host GET 均為 200，主持登入頁包含密碼欄位。未登入、未建立房間或變更活動。平台 build Node 選版及啟動 npm run start:cloud 已核實，未取得獨立 process.version shell 輸出。
+- 未變更全域 Node（仍 v26.5.0）、Cloudflare 或 Railway；未 commit/push。

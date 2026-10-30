@@ -25,7 +25,7 @@ for name, expected in checks.items():
             if file.is_file():
                 rel = file.relative_to(root).as_posix()
                 assert z.read(base + '/' + rel) == file.read_bytes(), (name, rel)
-        assert json.loads(z.read(base + '/VERSION.json'))['node'] == '24.21.0'
+        assert json.loads(z.read(base + '/VERSION.json'))['node'] == '24.22.1'
         assert json.loads(z.read(base + '/VERSION.json'))['game'] == json.loads((root / 'package.json').read_text())['version']
         launcher = 'start-game.command'
         assert base + '/' + launcher in names

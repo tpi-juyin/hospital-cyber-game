@@ -163,7 +163,7 @@ npm run start:local
 npm run package
 ```
 
-打包使用 `tar` 與 Python 3，僅在 Apple ARM Mac 執行；快取缺少執行環境時才需下載。固定下載 Node.js 24.21.0、cloudflared 2026.9.1，校驗 Node 官方 SHA256 與 GitHub release 的資產 digest。啟動檔統一使用英文檔名，並輸出版本資料與 SHA256SUMS；執行主持包時不需這些打包工具。
+打包使用 `tar` 與 Python 3，僅在 Apple ARM Mac 執行；快取缺少執行環境時才需下載。固定下載 Node.js 24.22.1、cloudflared 2026.9.1，校驗 Node 官方 SHA256 與 GitHub release 的資產 digest。啟動檔統一使用英文檔名，並輸出版本資料與 SHA256SUMS；執行主持包時不需這些打包工具。
 
 Node.js 版採記憶體狀態，服務重啟清空；Cloudflare 保存活動快照。兩者都不收集病人資料。第三方套件與執行環境授權見 `THIRD_PARTY_LICENSES.md` 與主持包的 `licenses/`。
 

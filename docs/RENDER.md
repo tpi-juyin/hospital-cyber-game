@@ -4,7 +4,7 @@
 
 - 使用私人 GitHub 儲存庫，Render 僅授權讀取此儲存庫。
 - Node Web Service、Free、Singapore、單一服務實例。
-- Node.js：24.21.0（`NODE_VERSION`）。
+- Node.js：24.22.1（`NODE_VERSION`）。
 - Build：`npm ci --include=dev && npm run build`
 - Start：`npm run start:cloud`
 - Health check：`/api/health`

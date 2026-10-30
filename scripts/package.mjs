@@ -8,7 +8,7 @@ import { execFileSync } from 'node:child_process';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 process.chdir(root);
 const GAME_VERSION = JSON.parse(await readFile(join(root, 'package.json'), 'utf8')).version;
-const NODE_VERSION = '24.21.0';
+const NODE_VERSION = '24.22.1';
 const CLOUDFLARED_VERSION = '2026.9.1';
 const cache = join(root, '.downloads'); const release = join(root, 'release');
 await mkdir(cache, { recursive: true }); await mkdir(release, { recursive: true });

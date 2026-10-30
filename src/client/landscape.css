@@ -106,3 +106,14 @@ html:fullscreen{background:#080f23;overflow:auto}
  body.arcade-theme .screen-loadout .layout-loadout>#create{grid-column:2;grid-row:2;align-self:center;margin:0}
  body.arcade-theme .screen-loadout .layout-identity{min-height:158px}
 }
+
+.fullscreen-button[hidden]{display:none!important}
+html:-webkit-full-screen{background:#080f23;overflow:auto}
+#fullscreen-help{box-sizing:border-box;width:min(480px,calc(100vw - 32px));max-height:calc(100dvh - 32px);overflow:auto;margin:auto;padding:24px;border:2px solid #ffd77c;border-radius:18px;background:#172640;color:#f5f7ff;box-shadow:0 8px 0 #080f23;font-family:inherit;line-height:1.65}
+#fullscreen-help::backdrop{background:rgb(4 9 24 / 80%)}
+#fullscreen-help h2{color:#ffd77c;font-size:23px;margin:0 0 12px}
+#fullscreen-help p,#fullscreen-help li{font-size:16px}
+#fullscreen-help ol{padding-left:24px}#fullscreen-help li{margin:8px 0}
+#fullscreen-help .fullscreen-help-note{padding:12px;border:1px solid #7187ac;border-radius:8px;color:#d9e5fa}
+#fullscreen-help button{width:100%;padding:12px;background:#ffd77c;color:#16243d;border:2px solid #ffe9b8;border-radius:10px;font-family:inherit;font-size:17px;font-weight:700;cursor:pointer}
+#fullscreen-help button:focus-visible{outline:3px solid #89ede0;outline-offset:4px}
