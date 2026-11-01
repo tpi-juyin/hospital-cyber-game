@@ -40,3 +40,18 @@ test('host lobby uses normal music only and restores it after room playback', t 
  m.connection(true);assert.equal(state!.visible,false);m.connection(false);assert.equal(state!.visible,true);
  m.lobby(false);assert.equal(state!.visible,false);
 });
+
+test('observed taps are paced, canceled on mute/exit and never replay a network gap', t => {
+ t.mock.timers.enable({apis:['setTimeout']});
+ const w=new Window();t.after(()=>w.happyDOM.close());
+ let taps=0;const fake={configure(){},unlock:async()=>{},isRunning:()=>true,action(){taps++},outcome(){},countdown(){}};
+ const root=w.document.body;const m=new MonitorAudio(root as unknown as HTMLElement,fake as unknown as BattleAudio);root.innerHTML=m.controls();m.enter();
+ const e=new Engine(),p=e.connect();e.action(p.id,{kind:'create',mode:'solo',role:'defense',duration:60});const r=e.playerView(p.id)!;r.phase='playing';r.remainingMs=20000;
+ const d=r.members.find(m=>m.role==='defense')!;m.update(r);d.stats.taps+=3;r.remainingMs-=500;m.update(r);
+ assert.equal(taps,1);t.mock.timers.tick(170);assert.equal(taps,2);t.mock.timers.tick(170);assert.equal(taps,3);
+ d.stats.taps+=3;r.remainingMs-=500;m.update(r);assert.equal(taps,4);m.leave();t.mock.timers.tick(1000);assert.equal(taps,4);
+ m.enter();m.update(r);d.stats.taps+=6;r.remainingMs-=3000;m.update(r);t.mock.timers.tick(1000);assert.equal(taps,4);
+ d.stats.taps+=3;r.remainingMs-=500;m.update(r);assert.equal(taps,5);
+ root.querySelector<import('happy-dom').HTMLButtonElement>('[data-monitor-audio="effects"]')!.click();t.mock.timers.tick(1000);assert.equal(taps,5);
+ m.leave();
+});

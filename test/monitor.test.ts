@@ -80,8 +80,8 @@ test('monitor keeps controls stable, escapes names and exposes failure, freeze a
   assert.equal(root.querySelectorAll('.monitor-node').length, 2); assert.equal(root.querySelectorAll('tbody tr').length, 4);
   r.hp = 50; history.update([r]); monitor.render(r, history.get(r.id)!);
   assert.equal(root.querySelector('[aria-label="醫院總血量"]')!.getAttribute('aria-valuenow'), '50');
-  assert.equal(root.querySelector('[aria-label="主機血量"]')!.getAttribute('aria-valuenow'), '0');
-  assert.equal(root.querySelector('[aria-label="備援機血量"]')!.getAttribute('aria-valuenow'), '100');
+  assert.equal(root.querySelector('[data-node="primary"] [aria-label="主機 CPU 模擬負載"]')!.getAttribute('aria-valuenow'), '0');
+  assert.ok(root.querySelector('[data-node="backup"]')!.textContent.includes('記憶體'));
   assert.ok(root.querySelector('.monitor-details #monitor-load'));
   assert.equal(root.querySelector('[data-exit]'), exit); assert.equal(window.document.activeElement, exit);
   assert.ok(root.querySelector('[data-node="primary"].node-down')); assert.ok(root.querySelector('[data-node="backup"].node-active'));
@@ -91,6 +91,11 @@ test('monitor keeps controls stable, escapes names and exposes failure, freeze a
   assert.equal(root.querySelector('[aria-label="醫院總血量"]')!.getAttribute('aria-valuenow'), '0');
   assert.equal(root.querySelectorAll('.node-down').length, 2); assert.match(root.textContent, /攻擊方獲勝/);
   assert.equal(root.dataset.phase, 'ended');
+  assert.match(root.querySelector('#monitor-status h2')!.textContent, /醫院防線失守/);
+  r.winner='defense';monitor.render(r, history.get(r.id)!);
+  assert.match(root.querySelector('#monitor-status h2')!.textContent, /成功抵禦攻擊/);
+  r.winner=null;monitor.render(r, history.get(r.id)!);
+  assert.match(root.querySelector('#monitor-status h2')!.textContent, /本局對戰中止/);
 });
 
 test('waiting monitor retains both names when players choose the same side', t => {

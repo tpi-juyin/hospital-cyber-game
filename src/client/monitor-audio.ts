@@ -2,10 +2,12 @@ import { BattleAudio } from './audio';
 import { combatStrategy, type SpectatorRoomView } from '../shared/protocol';
 import { icon } from './art';
 
-type Snapshot = { key: string; phase: string; taps: number; uses: number; second: number };
+type Snapshot = { key: string; phase: string; taps: number; uses: number; second: number; remaining: number };
 /** Shared by the read-only spectator and host dashboard. Never sends player actions. */
 export class MonitorAudio {
   private audio: BattleAudio;
+  private tapTimers = new Set<ReturnType<typeof setTimeout>>();
+  private clearTaps() { for (const timer of this.tapTimers) clearTimeout(timer); this.tapTimers.clear(); }
   private entered = false;
   private lobbyMusic = false;
   private previous?: Snapshot;
@@ -54,6 +56,7 @@ export class MonitorAudio {
   leave() { this.entered = false; this.previous = undefined; this.room = undefined; this.configure(); }
   connection(stale: boolean) { this.stale = stale; if (stale) this.previous = undefined; this.configure(); }
   private configure() {
+    if (!this.entered || this.stale || this.doc.hidden || !this.effects || this.room?.phase !== 'playing') this.clearTaps();
     const lobby = this.lobbyMusic && !this.entered;
     const visible = (this.entered || lobby) && !this.stale && !this.doc.hidden, phase = this.room?.phase;
     this.audio.configure({effects:this.effects && !lobby,music:this.music,visible,battle:lobby || phase==='playing',countdown:phase==='countdown',result:phase==='ended',urgent:!lobby && (this.room?.remainingMs || 0)<=10000});
@@ -62,13 +65,31 @@ export class MonitorAudio {
     this.room = room; this.stale = stale; this.configure(); this.buttons();
     if (!this.entered || stale || this.doc.hidden) { this.previous = undefined; return; }
     const defense = room.members.find(m=>m.role==='defense');
-    const current: Snapshot = {key:room.id+':'+room.roundId,phase:room.phase,taps:defense?.stats.taps || 0,uses:defense?.ultimate?.uses || 0,second:Math.ceil(room.remainingMs/1000)};
+    const current: Snapshot = {key:room.id+':'+room.roundId,phase:room.phase,taps:defense?.stats.taps || 0,uses:defense?.ultimate?.uses || 0,second:Math.ceil(room.remainingMs/1000),remaining:room.remainingMs};
     const old = this.previous; this.previous = current;
-    if (!old || old.key !== current.key) return; // Joining never replays historical cues.
+    if (!old || old.key !== current.key) { this.clearTaps(); return; } // Joining never replays historical cues.
     if (room.phase==='countdown' && current.second!==old.second) this.audio.countdown(current.second);
     if (room.phase==='playing') {
       if (old.phase==='countdown') this.audio.countdown(0);
-      if (old.phase==='playing' && defense && (current.taps>old.taps || current.uses>old.uses)) this.audio.action('defense',combatStrategy(defense),true);
+      if (old.phase==='playing' && defense) {
+        const elapsed = old.remaining - current.remaining;
+        if (elapsed > 1000 || elapsed < 0) { this.clearTaps(); return; }
+        const count = Math.min(6, Math.max(0, current.taps - old.taps));
+        if (count || current.uses > old.uses) {
+          this.clearTaps();
+          const strategy = combatStrategy(defense);
+          this.audio.action('defense', strategy, true);
+          // Spread observed effective taps over one recent update interval, never a catch-up burst.
+          const spacing = Math.max(1000 / 6, Math.min(1000, elapsed || 500) / Math.max(1,count));
+          for (let i = 1; i < count; i++) {
+            const timer = setTimeout(() => {
+              this.tapTimers.delete(timer);
+              if (this.entered && !this.stale && !this.doc.hidden && this.effects && this.room?.phase === 'playing') this.audio.action('defense', strategy, true);
+            }, i * spacing);
+            this.tapTimers.add(timer);
+          }
+        }
+      }
     }
     if (room.phase==='ended' && old.phase!=='ended' && room.winner) this.audio.outcome(room.winner==='defense');
   }

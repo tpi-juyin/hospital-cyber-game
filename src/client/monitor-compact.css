@@ -122,3 +122,26 @@
  .server-monitor .monitor-ultimates b{font-size:18px}.server-monitor .monitor-kpis strong{font-size:36px}
  .server-monitor .monitor-kpis article>span{font-size:18px}.server-monitor #monitor-trend-preview .monitor-chart{max-height:220px}
 }
+/* Outcome stays prominent even in the compact phone dashboard. */
+.server-monitor[data-phase="ended"] .monitor-status-copy{display:block}
+.server-monitor[data-phase="ended"] .monitor-status h2{font-size:clamp(24px,3vw,42px);font-weight:900}
+.server-monitor[data-phase="ended"] .monitor-status p{display:block;font-size:16px;margin-top:3px;line-height:1.3}
+.server-monitor[data-phase="ended"] .monitor-status{border:2px solid #b7c8e0}
+@media(max-width:700px), (orientation:landscape) and (max-height:600px){
+ .server-monitor .monitor-simulation-note{font-size:10px}
+ .server-monitor .monitor-node-metric{margin:3px 0;font-size:12px}
+ .server-monitor .monitor-node .monitor-bar{height:5px}
+ .server-monitor[data-phase="ended"] .monitor-status{flex-wrap:wrap}
+ .server-monitor[data-phase="ended"] .monitor-status-copy{width:100%;flex:auto;text-align:center}
+ .server-monitor[data-phase="ended"] .monitor-status h2{font-size:24px}
+ .server-monitor[data-phase="ended"] .monitor-status p{font-size:13px}
+ .server-monitor[data-phase="ended"] .monitor-players{display:none}
+}
+@media(max-width:700px), (orientation:landscape) and (max-height:600px){
+ .server-monitor[data-phase="ended"] .monitor-meta,.server-monitor[data-phase="ended"] .monitor-ultimates{display:none}
+ .server-monitor .monitor-audio-controls [data-monitor-audio-hint]{font-size:10px}
+}
+@media(orientation:landscape) and (max-height:600px){
+ .server-monitor[data-phase="ended"] .monitor-status-copy{display:flex;align-items:center;justify-content:center;gap:12px}
+ .server-monitor[data-phase="ended"] .monitor-status p{margin:0}
+}
