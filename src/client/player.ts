@@ -1,3 +1,4 @@
+import { bindCombatInput } from './combat-input';
 import { fullscreenButton } from './fullscreen';
 import { io } from './transport';
 import QRCode from 'qrcode';
@@ -194,12 +195,13 @@ function battleScreen(r: RoomView) {
   ultimatePending = false;
   oldUltimateUses = { attack: r.members.find(m => m.role === 'attack')?.ultimate?.uses || 0, defense: r.members.find(m => m.role === 'defense')?.ultimate?.uses || 0 };
   shell(`<section class="battle-top"><div><span class="eyebrow">${r.mode === 'solo' ? '單人挑戰' : `房間 ${r.code}`} ${r.ultimateMode ? '· 大招模式' : ''}</span><h1 class="side-title ${role}">${ROLE_LABEL[role]}</h1></div><div class="timer" id="timer">${icon('clock', 20)}<b id="remaining">60</b><small>秒</small></div></section><div class="battle-objective"><span>${role === 'attack' ? '突破護盾，在倒數結束前攻下主機！' : '強化護盾，讓醫療服務撐到最後！'}</span><button id="surrender" class="surrender-button" hidden>投降</button></div><section class="health-card"><div class="meter-label"><span>${icon('heart', 16)}醫院血量</span><b id="hp-text">100 / 100</b></div><div class="meter hp"><i id="hp-bar"></i></div><div class="meter-label shield-label"><span>${icon('shield', 16)}防護盾</span><b id="shield-text">30 / 30</b></div><div class="meter shield"><i id="shield-bar"></i></div></section><section class="battle-arena">${arena(r.hp)}<div class="battle-effects" aria-hidden="true"><div class="effect-lane attack-effects" data-effects="attack"></div><div class="effect-lane defense-effects" data-effects="defense"></div></div><div class="versus-names"><span>${esc(r.members.find(m => m.role === 'attack')?.name || '')}</span><span>${esc(r.members.find(m => m.role === 'defense')?.name || '')}</span></div></section><div class="intel-strip"><span>攻擊：<b id="attack-type"></b></span><span>防護：<b id="defense-type"></b></span></div><section class="controls">${r.ultimateMode ? ultimateButton() : ''}<div class="section-label"><b>${role === 'attack' ? '選擇攻擊招式' : '選擇防護重點'}</b><span class="match-hint" id="match-hint"></span></div><div class="strategy-grid">${STRATEGIES.map((s, i) => `<button class="strategy-button ${role}" data-strategy="${i}">${icon(i === 1 && role === 'defense' ? 'gate' : s.icon, 24)}<b>${s[role]}</b><small class="cooldown-text">點選切換</small></button>`).join('')}</div><button class="tap-button ${role}" id="tap">${icon(role === 'attack' ? 'bolt' : 'shield', 30)}<span>${role === 'attack' ? '發動攻擊' : '強化防護'}<small>連續點擊，每秒最多 6 次</small></span><span class="tap-spark">✦</span></button><div class="tap-counter">有效連點 <b id="tap-count">0</b></div></section><div id="overlay" class="game-overlay" hidden></div>`, true);
-  document.querySelectorAll<HTMLButtonElement>('[data-strategy]').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll<HTMLButtonElement>('[data-strategy]').forEach(b => bindCombatInput(b, () => {
     if (!connected || returnRequired || document.hidden || room?.phase !== 'playing') return;
     socket.volatile.emit('action', { kind: 'strategy', strategy: Number(b.dataset.strategy), roundId: room.roundId, seq: ++seq }, (reply: Reply) => { if (!reply.ok && reply.code !== 'COOLDOWN') toast(reply.message || '無法切換。'); });
   }));
   bind('surrender', () => { void surrender(); });
-  bind('ultimate', () => { void releaseUltimate(); });
+  const ultimate = document.querySelector<HTMLButtonElement>('#ultimate');
+  if (ultimate) bindCombatInput(ultimate, () => { void releaseUltimate(); });
   const tap = document.querySelector<HTMLButtonElement>('#tap')!;
   const press = () => {
     if (!connected || returnRequired || document.hidden || room?.phase !== 'playing') return;
@@ -208,8 +210,7 @@ function battleScreen(r: RoomView) {
     audio.action(role, strategy); effects.play(document.querySelector('.battle-arena'), role, strategy);
     tap.classList.remove('pressed'); void tap.offsetWidth; tap.classList.add('pressed'); setTimeout(() => tap.classList.remove('pressed'), 100);
   };
-  tap.addEventListener('pointerdown', e => { if (e.isPrimary && e.button === 0) { e.preventDefault(); press(); } });
-  tap.addEventListener('click', e => { if (e.detail === 0) press(); });
+  bindCombatInput(tap, press);
   updateBattle(r);
 }
 async function surrender() {

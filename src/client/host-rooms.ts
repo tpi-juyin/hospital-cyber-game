@@ -1,5 +1,5 @@
 import { type RoomView } from '../shared/protocol';
-import { icon, hospital } from './art';
+import { icon, arena } from './art';
 
 const phases = { waiting: '等待準備', countdown: '即將開戰', playing: '對戰中', paused: '等待重連', ended: '已結束' };
 
@@ -9,12 +9,13 @@ export class HostRooms {
   private empty: HTMLElement;
   private cards = new Map<string, HTMLElement>();
   constructor(private root: HTMLElement) {
-    root.innerHTML = `<div class="room-grid"></div><div class="empty-board">${hospital()}<h3>準備迎接玩家</h3><p>讓玩家掃描左側 QR Code。<br>第一個房間出現時，戰況會自動顯示在這裡。</p></div>`;
+    root.innerHTML = `<section class="host-attract" aria-label="醫院資安攻防戰介紹"><div class="host-title-copy"><span class="season-stamp">CYBER CARE // ARCADE</span><h1 class="game-logo">醫院資安<strong>攻防戰<span>✦</span></strong></h1></div><div class="host-title-art">${arena()}</div><p class="host-game-description">扮演駭客或醫院防守方，透過連點、切換招式與施放大招展開限時攻防，在對戰中認識多因素驗證、流量限制與安全更新，一起守護醫療服務！</p><p class="empty-board">掃描加入，準備迎接挑戰！</p></section><div class="room-grid" tabindex="0" aria-label="即時戰況房間清單"></div>`;
     this.grid = root.querySelector('.room-grid')!; this.empty = root.querySelector('.empty-board')!;
   }
   render(rooms: RoomView[]) {
     const ids = new Set(rooms.map(r => r.id));
     for (const [id, card] of this.cards) if (!ids.has(id)) { card.remove(); this.cards.delete(id); }
+    this.root.classList.toggle('has-rooms',!!rooms.length);
     this.grid.hidden = !rooms.length; this.empty.hidden = !!rooms.length;
     for (const r of rooms) {
       let card = this.cards.get(r.id);

@@ -296,3 +296,6 @@ body.arcade-theme .ultimate-panel.defense .ultimate-meter small{white-space:norm
 /* Reduce accidental pull-to-refresh and overscroll navigation during a match. */
 html.in-match{overscroll-behavior:none}
 html.in-match .battle-shell{overscroll-behavior:contain}
+
+/* Independent multi-touch combat controls; keep page zoom available elsewhere. */
+body.arcade-theme .battle-shell .controls button{touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}

@@ -150,3 +150,15 @@ body.host-theme .phase-pill.defense-loss{background:#512c39;color:#ffd3c5;border
 body.host-theme .phase-pill.no-contest{background:#35404d;color:#e1e7ee;border:1px solid #91a0b3;font-weight:700}
 body.host-theme .room-card-top{gap:10px;flex-wrap:wrap}
 body.host-theme #rooms .room-grid[hidden],body.host-theme #rooms .empty-board[hidden]{display:none}
+/* Use available television height for readable battle information. */
+@media(min-width:1100px) and (min-height:850px){
+ .server-monitor .monitor-wrap{min-height:calc(100dvh - 40px)}
+ .server-monitor .monitor-main-grid{flex:1}
+ .server-monitor .monitor-health-panel,.server-monitor .monitor-battle-panel{display:flex;flex-direction:column}
+ .server-monitor .monitor-health-panel .monitor-nodes{flex:1;align-items:stretch}
+ .server-monitor .monitor-node{display:flex;flex-direction:column;justify-content:center;gap:5px}
+ .server-monitor #monitor-health>.monitor-bar{height:24px}
+ .server-monitor .monitor-node .monitor-bar{height:12px}
+ .server-monitor #monitor-trend-preview{flex:1;display:flex;flex-direction:column;justify-content:center}
+ .server-monitor #monitor-trend-preview .monitor-chart{max-height:260px;flex:1}
+}
