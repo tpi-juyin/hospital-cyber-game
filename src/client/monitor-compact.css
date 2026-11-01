@@ -145,3 +145,8 @@
  .server-monitor[data-phase="ended"] .monitor-status-copy{display:flex;align-items:center;justify-content:center;gap:12px}
  .server-monitor[data-phase="ended"] .monitor-status p{margin:0}
 }
+body.host-theme .phase-pill.defense-win{background:#214e42;color:#b2ffe4;border:1px solid #67d8b5;font-weight:800}
+body.host-theme .phase-pill.defense-loss{background:#512c39;color:#ffd3c5;border:1px solid #f59785;font-weight:800}
+body.host-theme .phase-pill.no-contest{background:#35404d;color:#e1e7ee;border:1px solid #91a0b3;font-weight:700}
+body.host-theme .room-card-top{gap:10px;flex-wrap:wrap}
+body.host-theme #rooms .room-grid[hidden],body.host-theme #rooms .empty-board[hidden]{display:none}
