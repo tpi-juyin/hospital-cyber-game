@@ -299,3 +299,27 @@ html.in-match .battle-shell{overscroll-behavior:contain}
 
 /* Independent multi-touch combat controls; keep page zoom available elsewhere. */
 body.arcade-theme .battle-shell .controls button{touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+
+/* Prominent room entry and concise, readable post-game knowledge. */
+body.arcade-theme .game-mode.join-entry{background:linear-gradient(#8970ba,#624c92);border-color:#d9c6ff;color:#fff;min-height:62px}
+body.arcade-theme .screen-loadout .duo-setup .duo-join-entry .divider{display:flex;margin:10px 0;color:#e3d9fa}
+body.arcade-theme .screen-loadout .duo-setup .duo-join-entry .join-form{display:flex;margin-bottom:18px}
+body.arcade-theme .screen-loadout .duo-setup .duo-join-entry .invite-intro{display:block}
+body.arcade-theme .screen-loadout .duo-setup .duo-join-entry .invite-button{display:flex}
+body.arcade-theme .duo-join-entry .code-input{font-size:22px;min-width:0}
+body.arcade-theme .duo-join-entry .secondary-button{background:#ffda85;color:#282137;border-color:#fff0b3;font-size:14px}
+body.arcade-theme .learning summary{font-size:15px}
+body.arcade-theme .learning p{font-size:16px;line-height:1.7;color:#e3edff;margin:14px 0}
+body.arcade-theme .learning small{font-size:12px;line-height:1.6;display:block;margin-top:12px}
+@media(max-width:600px) and (max-height:740px){
+ body.arcade-theme .screen-home .title-stage .arena{height:105px}
+ body.arcade-theme .screen-home .title-tag{margin:4px 0 10px}
+ body.arcade-theme .screen-home .game-menu{gap:8px}
+ body.arcade-theme .screen-home .game-mode{min-height:55px;padding:8px 14px}
+ body.arcade-theme .screen-home .menu-status{margin-top:10px}
+ body.arcade-theme .screen-loadout .duo-setup{padding:14px}
+ body.arcade-theme .duo-setup .mode-tabs{margin:12px 0}
+ body.arcade-theme .duo-setup .duo-setup-hint{padding:8px;margin:8px 0;font-size:11px}
+ body.arcade-theme .duo-setup .duration-box{margin:10px 0;padding:8px 10px}
+ body.arcade-theme .screen-loadout .duo-setup .duo-join-entry .join-form{margin-bottom:8px}
+}
