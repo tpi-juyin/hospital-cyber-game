@@ -12,6 +12,7 @@ import './arcade.css';
 import './host-readable.css';
 import './spectator.css';
 import './landscape.css';
+import './monitor-compact.css';
 
 const phases = { waiting: '等待準備', countdown: '即將開戰', playing: '對戰中', paused: '等待重連', ended: '已結束' };
 const app = document.querySelector<HTMLElement>('#app')!;
@@ -41,6 +42,7 @@ function renderCards(rooms: SpectatorSummary[]) {
   }
 }
 function exit() {
+  monitor.leave();
   const previous = selected; selected = null; generation++; pending?.abort(); panel.hidden = true; shell.inert = false;
   document.body.classList.remove('monitor-open'); document.title = '醫院資安攻防戰 · 觀戰大廳';
   history.update([]); renderCards(summaries);
@@ -75,6 +77,7 @@ async function poll() {
 cards.addEventListener('click', event => {
   const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-watch]');
   if (!button || !summaries.some(r => r.id === button.dataset.watch)) return;
+  monitor.enter();
   selected = button.dataset.watch!; generation++; pending?.abort(); status.textContent = '正在載入戰況…'; schedule(0);
 });
 panel.addEventListener('click', e => { if ((e.target as HTMLElement).closest('[data-exit]')) exit(); });

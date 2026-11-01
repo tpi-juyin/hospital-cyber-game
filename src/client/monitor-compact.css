@@ -1,0 +1,124 @@
+/* Essential battle information fits the viewport; details stay in an accessible dialog. */
+.projection.server-monitor{padding:clamp(8px,1.5vh,20px) clamp(10px,2vw,28px);overflow:auto}
+.server-monitor .monitor-wrap{max-width:1800px;display:flex;flex-direction:column;gap:10px;min-height:0}
+.server-monitor .monitor-header{gap:12px;padding-bottom:8px;flex-wrap:nowrap}
+.server-monitor .monitor-header-right{gap:10px}
+.server-monitor .monitor-meta{margin:0;font-size:13px}
+.server-monitor .monitor-status{min-height:0;padding:8px 14px;gap:12px;flex-wrap:nowrap}
+.server-monitor .monitor-status-art{width:54px}.server-monitor .monitor-status-art svg{height:54px}
+.server-monitor .monitor-status h2{font-size:clamp(19px,2vw,28px)}
+.server-monitor .monitor-status p,.server-monitor .monitor-status-label{display:none}
+.server-monitor .monitor-players{min-width:0;width:auto;display:grid;border:0;padding:0;gap:6px;font-size:15px}
+.server-monitor .monitor-main-grid{grid-template-columns:1fr 1fr;gap:12px}
+.server-monitor .monitor-panel{padding:clamp(10px,1.5vh,18px)}
+.server-monitor .monitor-panel-heading{margin-bottom:8px}
+.server-monitor .monitor-health-label{display:flex;justify-content:space-between;align-items:center;font-size:18px;margin-bottom:8px}
+.server-monitor .monitor-health-label strong{font-size:clamp(28px,3vw,42px);color:#ffe08c}
+.server-monitor .monitor-health-label small{font-size:16px;color:var(--monitor-muted)}
+.server-monitor #monitor-health>.monitor-bar{height:18px;border:1px solid #6e8896}
+.server-monitor #monitor-health>.monitor-bar:last-child{height:8px;margin-bottom:12px}
+.server-monitor .monitor-shield-label{display:flex;align-items:center;gap:6px;margin:10px 0 6px;font-size:15px}
+.server-monitor .monitor-shield-label b{margin-left:auto}
+.server-monitor .monitor-route{padding:7px;margin:8px 0;font-size:14px}
+.server-monitor .monitor-node{padding:10px}
+.server-monitor .monitor-node-top{margin-bottom:8px}
+.server-monitor .monitor-node .monitor-bar{height:12px}
+.server-monitor .monitor-node-metric{margin:6px 0;font-size:15px}
+.server-monitor .monitor-kpis{grid-template-columns:1fr 1fr;margin:0 0 10px;gap:8px}
+.server-monitor .monitor-kpis article{padding:6px 12px}
+.server-monitor .monitor-kpis strong{display:inline-block;font-size:28px;margin:0 0 0 10px}
+.server-monitor .monitor-kpis p{display:none}
+.server-monitor .monitor-kpis article>span{font-size:14px}
+.server-monitor .monitor-protection>div{padding:8px 4px;font-size:15px}
+.server-monitor .monitor-protection small{display:none}
+.server-monitor .monitor-ultimates{gap:8px;margin-top:10px}
+.server-monitor .monitor-ultimates article{padding:8px 10px}
+.server-monitor .monitor-ultimates span{font-size:15px;gap:4px;flex-direction:column}
+.server-monitor .monitor-ultimates small{font-size:12px}
+.server-monitor #monitor-trend-preview h3{font-size:14px;margin:12px 0 2px;color:var(--monitor-muted)}
+.server-monitor #monitor-trend-preview .monitor-chart{max-height:clamp(85px,18vh,180px)}
+.server-monitor .monitor-footer{margin:0;font-size:12px;line-height:1.4}
+.server-monitor .monitor-details{position:fixed;inset:0;margin:auto;width:min(1000px,94vw);max-height:90dvh;padding:18px;background:#142039;color:#eff6f5;border:2px solid #829ab8;border-radius:18px;overflow:auto;box-shadow:0 12px 60px #0009}
+.server-monitor .monitor-details:not([open]){display:none}
+.server-monitor .monitor-details::backdrop{background:#060e21cc}
+.server-monitor .monitor-details>header{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px}
+.server-monitor .monitor-details .monitor-grid{grid-template-columns:1fr 1fr}
+.server-monitor .monitor-details h2{font-size:20px}
+.server-monitor #monitor-load{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.server-monitor .monitor-details .monitor-caption{margin-top:8px}
+@media(max-width:700px){
+ .server-monitor .monitor-header{flex-wrap:wrap;gap:4px;padding-bottom:5px}
+ .server-monitor .monitor-brand-icon,.server-monitor .monitor-eyebrow,.server-monitor .projection-version{display:none}
+ .server-monitor h1{font-size:18px;margin:0}.server-monitor .monitor-header-right{width:100%;gap:5px;justify-content:space-between;flex-wrap:wrap}
+ .server-monitor .monitor-countdown{font-size:25px}.server-monitor #monitor-round{gap:5px}.server-monitor .monitor-room{font-size:12px}
+ .server-monitor .monitor-exit{font-size:12px;padding:8px;gap:3px;min-height:36px}.server-monitor .monitor-exit svg{display:none}
+ .server-monitor .monitor-audio-controls{gap:4px}.server-monitor .icon-button{width:32px;height:32px;min-height:32px;padding:5px}
+ .server-monitor .monitor-meta>span:first-child{display:none}.server-monitor .monitor-meta{font-size:12px}
+ .server-monitor .monitor-status-art,.server-monitor .monitor-status-copy{display:none}
+ .server-monitor .monitor-status{padding:7px 10px}.server-monitor .monitor-players{width:100%;gap:5px;font-size:14px}
+ .server-monitor .monitor-players>span{min-width:0}.server-monitor .monitor-players b{max-width:45%}.server-monitor .monitor-players em{font-size:12px;padding:2px 5px}
+ .server-monitor .monitor-main-grid{grid-template-columns:1fr;gap:8px}.server-monitor .monitor-wrap{gap:6px}
+ .server-monitor .monitor-panel{padding:8px 10px}.server-monitor .monitor-panel h2{font-size:15px}
+ .server-monitor .monitor-panel-heading{margin-bottom:4px}
+ .server-monitor .monitor-health-label{font-size:15px;margin:0 0 4px}.server-monitor .monitor-health-label strong{font-size:25px}
+ .server-monitor #monitor-health>.monitor-bar{height:12px}.server-monitor #monitor-health>.monitor-bar:last-child{height:6px;margin-bottom:6px}
+ .server-monitor .monitor-shield-label{margin:5px 0 3px;font-size:13px}
+ .server-monitor .monitor-route{display:none}.server-monitor .monitor-nodes{gap:8px}
+ .server-monitor .monitor-node{padding:7px}.server-monitor .monitor-node-top{margin:0;gap:6px}.server-monitor .monitor-node h3{font-size:16px}
+ .server-monitor .monitor-node small,.server-monitor .monitor-rack{display:none}.server-monitor .monitor-node-state{font-size:12px}
+ .server-monitor .monitor-node-metric{font-size:12px;margin:4px 0}.server-monitor .monitor-node .monitor-bar{height:7px}
+ .server-monitor .monitor-battle-panel>.monitor-panel-heading,.server-monitor .monitor-kpis,#monitor-trend-preview,.server-monitor .monitor-footer{display:none}
+ .server-monitor .monitor-protection>div{font-size:13px;padding:6px 2px}.server-monitor .monitor-protection svg{display:none}
+ .server-monitor .monitor-ultimates{margin-top:7px;gap:6px}.server-monitor .monitor-ultimates article{padding:6px 8px}.server-monitor .monitor-ultimates span{font-size:13px;margin-bottom:5px}.server-monitor .monitor-ultimates b{font-size:12px}.server-monitor .monitor-ultimates small{display:none}
+ .server-monitor .monitor-details .monitor-grid{grid-template-columns:1fr}
+}
+@media(orientation:landscape) and (max-height:600px){
+ .projection.server-monitor{padding:7px 10px}.server-monitor .monitor-wrap{gap:5px}
+ .server-monitor .monitor-header{gap:6px;padding-bottom:4px;flex-wrap:nowrap}.server-monitor .monitor-header-right{width:auto;gap:6px;flex-wrap:nowrap}
+ .server-monitor .monitor-brand-icon,.server-monitor .monitor-eyebrow,.server-monitor .projection-version,.server-monitor .monitor-meta,.server-monitor .monitor-footer,.server-monitor .monitor-status-art,.server-monitor .monitor-status-copy,.server-monitor #monitor-trend-preview{display:none}
+ .server-monitor h1{font-size:18px}.server-monitor .monitor-countdown{font-size:25px}.server-monitor #monitor-round{gap:5px}.server-monitor .monitor-exit{padding:6px;font-size:12px}.server-monitor .monitor-exit svg{display:none}
+ .server-monitor .monitor-main-grid{grid-template-columns:1fr 1fr;gap:8px}.server-monitor .monitor-status{padding:5px 10px}
+ .server-monitor .monitor-players{display:flex;width:100%;gap:12px;font-size:13px}.server-monitor .monitor-players>span{flex:1;min-width:0}.server-monitor .monitor-players em{font-size:12px;padding:2px 4px}
+ .server-monitor .monitor-panel{padding:8px 10px}.server-monitor .monitor-panel-heading{margin-bottom:3px}.server-monitor .monitor-panel h2{font-size:15px}
+ .server-monitor .monitor-health-label{font-size:15px;margin:0 0 4px}.server-monitor .monitor-health-label strong{font-size:24px}.server-monitor #monitor-health>.monitor-bar{height:11px}.server-monitor #monitor-health>.monitor-bar:last-child{height:5px;margin-bottom:6px}.server-monitor .monitor-shield-label{font-size:12px;margin:4px 0}
+ .server-monitor .monitor-route,.server-monitor .monitor-rack,.server-monitor .monitor-node small{display:none}.server-monitor .monitor-node{padding:6px}.server-monitor .monitor-node h3{font-size:16px}.server-monitor .monitor-node-top{margin:0}.server-monitor .monitor-node-state,.server-monitor .monitor-node-metric{font-size:12px}.server-monitor .monitor-node .monitor-bar{height:6px}
+ .server-monitor .monitor-kpis{display:none}.server-monitor .monitor-protection>div{font-size:13px;padding:5px 2px}.server-monitor .monitor-protection svg{display:none}.server-monitor .monitor-ultimates{margin-top:7px}.server-monitor .monitor-ultimates article{padding:6px}.server-monitor .monitor-ultimates span{font-size:13px}.server-monitor .monitor-ultimates b{font-size:12px}.server-monitor .monitor-ultimates small{display:none}
+}
+.server-monitor .monitor-nodes{grid-template-columns:1fr 1fr}
+.server-monitor .monitor-protection{grid-template-columns:repeat(3,minmax(0,1fr))}
+.server-monitor .monitor-ultimates{grid-template-columns:1fr 1fr}
+.server-monitor .monitor-players>span{flex-wrap:nowrap}
+@media(max-width:700px) and (orientation:portrait){
+ .server-monitor .monitor-header{display:grid;grid-template-columns:1fr auto auto;gap:5px;align-items:center}
+ .server-monitor .monitor-header-right{display:contents}
+ .server-monitor .monitor-brand{grid-column:1;grid-row:1}
+ .server-monitor [data-details-open]{grid-column:2;grid-row:1}
+ .server-monitor [data-exit]{grid-column:3;grid-row:1}
+ .server-monitor .monitor-audio-controls{grid-column:1;grid-row:2}
+ .server-monitor .monitor-header-right>[data-fullscreen]{grid-column:2;grid-row:2}
+ .server-monitor #monitor-round{grid-column:3;grid-row:2}
+ .server-monitor .monitor-protection>div{justify-content:center}
+}
+@media(orientation:landscape) and (max-height:600px){
+ .server-monitor .monitor-meta{display:flex;font-size:12px;line-height:1.2}
+ .server-monitor .monitor-meta>span:first-child{display:none}
+}
+@media(max-width:360px) and (orientation:portrait){
+ .server-monitor .monitor-wrap{gap:4px}.server-monitor .monitor-panel{padding:6px 8px}
+ .server-monitor .monitor-node{padding:5px}.server-monitor .monitor-header{padding-bottom:2px}
+ .server-monitor .monitor-exit{font-size:11px;padding:6px}
+}
+@media(min-width:1600px) and (min-height:900px){
+ .server-monitor .monitor-wrap{gap:16px}
+ .server-monitor h1{font-size:36px}.server-monitor .monitor-countdown{font-size:48px}
+ .server-monitor .monitor-exit{font-size:18px}.server-monitor .monitor-room,.server-monitor .monitor-meta{font-size:16px}
+ .server-monitor .monitor-status{padding:14px 20px}.server-monitor .monitor-status h2{font-size:32px}
+ .server-monitor .monitor-players{font-size:20px}.server-monitor .monitor-players em{font-size:16px}
+ .server-monitor .monitor-panel{padding:24px}.server-monitor .monitor-panel h2{font-size:24px}
+ .server-monitor .monitor-health-label{font-size:23px}.server-monitor .monitor-health-label strong{font-size:54px}
+ .server-monitor .monitor-shield-label,.server-monitor .monitor-route,.server-monitor .monitor-node-metric{font-size:18px}
+ .server-monitor .monitor-node{padding:20px}.server-monitor .monitor-node h3{font-size:28px}.server-monitor .monitor-node-state{font-size:18px}
+ .server-monitor .monitor-protection>div,.server-monitor .monitor-ultimates span{font-size:19px}
+ .server-monitor .monitor-ultimates b{font-size:18px}.server-monitor .monitor-kpis strong{font-size:36px}
+ .server-monitor .monitor-kpis article>span{font-size:18px}.server-monitor #monitor-trend-preview .monitor-chart{max-height:220px}
+}

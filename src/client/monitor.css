@@ -162,3 +162,5 @@ body.monitor-open{overflow:hidden}
 .monitor-ultimates b{color:#ffd183;font-size:14px}.monitor-ultimates .defense b{color:#6fe0ba}
 .monitor-ultimates small{display:block;color:var(--monitor-muted);font-size:13px;margin-top:5px}
 @media(max-width:680px){.monitor-ultimates span{flex-direction:column;gap:4px}}
+
+.monitor-audio-controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.monitor-audio-controls .icon-button{position:relative;flex-shrink:0}.monitor-audio-controls [data-monitor-audio-hint]{font-size:13px;color:#ffd77c}.monitor-header-right{flex-wrap:wrap}

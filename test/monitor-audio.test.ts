@@ -1,0 +1,42 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { Window } from 'happy-dom';
+import { MonitorAudio } from '../src/client/monitor-audio';
+import { BattleAudio, type AudioState } from '../src/client/audio';
+import { Engine } from '../src/server/engine';
+
+test('monitor audio follows defense only, suppresses backlog, separates preferences and stops on exit', async t => {
+ const w=new Window();t.after(()=>w.happyDOM.close());
+ const root=w.document.createElement('div');w.document.body.append(root);
+ const events: unknown[][]=[];let state:AudioState;
+ const fake={configure(s:AudioState){state=s;},unlock:async()=>{},isRunning:()=>true,action:(...a:unknown[])=>events.push(['action',...a]),outcome:(won:boolean)=>events.push(['outcome',won]),countdown:(n:number)=>events.push(['countdown',n])};
+ const m=new MonitorAudio(root as unknown as HTMLElement,fake as unknown as BattleAudio);root.innerHTML=m.controls();m.connection(true);m.enter();assert.equal(state!.visible,true);
+ const e=new Engine(),p=e.connect();e.action(p.id,{kind:'create',mode:'solo',role:'defense',duration:60});const r=e.playerView(p.id)!;
+ r.phase='playing';r.remainingMs=20000;const d=r.members.find(m=>m.role==='defense')!,a=r.members.find(m=>m.role==='attack')!;
+ d.stats.taps=50;m.update(r);assert.equal(events.length,0);assert.equal(state!.battle,true);
+ a.stats.taps++;m.update(r);assert.equal(events.length,0);
+ d.stats.taps+=3;m.update(r);assert.equal(events.length,1);assert.deepEqual(events[0],['action','defense',d.strategy,true]);
+ r.remainingMs=9000;m.update(r);assert.equal(state!.urgent,true);
+ root.querySelector<import("happy-dom").HTMLButtonElement>('[data-monitor-audio="music"]')!.click();assert.equal(state!.music,false);assert.equal(state!.effects,true);
+ root.querySelector<import("happy-dom").HTMLButtonElement>('[data-monitor-audio="effects"]')!.click();assert.equal(state!.effects,false);assert.equal(state!.music,false);
+ r.phase='ended';r.winner='attack';m.update(r);m.update(r);assert.deepEqual(events.at(-1),['outcome',false]);assert.equal(events.filter(x=>x[0]==='outcome').length,1);
+ m.leave();assert.equal(state!.visible,false);assert.equal(state!.battle,false);
+ events.length=0;m.enter();m.update(r);assert.equal(events.length,0,'no result on joining ended room');
+ r.phase='playing';m.update(r);m.connection(true);assert.equal(state!.visible,false);d.stats.taps+=30;m.update(r);assert.equal(events.length,0,'no catch-up after stale connection');
+ r.phase='countdown';r.remainingMs=3000;m.update(r);r.remainingMs=2000;m.update(r);r.phase='playing';m.update(r);assert.deepEqual(events.slice(-2),[['countdown',2],['countdown',0]]);
+ m.leave();
+});
+
+test('host lobby uses normal music only and restores it after room playback', t => {
+ const w=new Window();t.after(()=>w.happyDOM.close());
+ let state:AudioState;
+ const fake={configure(s:AudioState){state=s;},unlock:async()=>{},isRunning:()=>true};
+ const m=new MonitorAudio(w.document.body as unknown as HTMLElement,fake as unknown as BattleAudio);
+ m.lobby(true);assert.equal(state!.battle,true);assert.equal(state!.urgent,false);assert.equal(state!.effects,false);
+ const e=new Engine(),p=e.connect();e.action(p.id,{kind:'create',mode:'solo',role:'defense',duration:60});const r=e.playerView(p.id)!;
+ r.phase='playing';r.remainingMs=9000;m.enter();m.update(r);
+ assert.equal(state!.urgent,true);assert.equal(state!.effects,true);
+ m.leave();assert.equal(state!.battle,true);assert.equal(state!.urgent,false);assert.equal(state!.effects,false);
+ m.connection(true);assert.equal(state!.visible,false);m.connection(false);assert.equal(state!.visible,true);
+ m.lobby(false);assert.equal(state!.visible,false);
+});

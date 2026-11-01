@@ -79,11 +79,16 @@ test('monitor keeps controls stable, escapes names and exposes failure, freeze a
   assert.match(root.textContent, /非真實醫療監控/); assert.equal(root.querySelectorAll('img').length, 0);
   assert.equal(root.querySelectorAll('.monitor-node').length, 2); assert.equal(root.querySelectorAll('tbody tr').length, 4);
   r.hp = 50; history.update([r]); monitor.render(r, history.get(r.id)!);
+  assert.equal(root.querySelector('[aria-label="醫院總血量"]')!.getAttribute('aria-valuenow'), '50');
+  assert.equal(root.querySelector('[aria-label="主機血量"]')!.getAttribute('aria-valuenow'), '0');
+  assert.equal(root.querySelector('[aria-label="備援機血量"]')!.getAttribute('aria-valuenow'), '100');
+  assert.ok(root.querySelector('.monitor-details #monitor-load'));
   assert.equal(root.querySelector('[data-exit]'), exit); assert.equal(window.document.activeElement, exit);
   assert.ok(root.querySelector('[data-node="primary"].node-down')); assert.ok(root.querySelector('[data-node="backup"].node-active'));
   monitor.connection(true); assert.equal(root.querySelector<HTMLElement>('#monitor-stale')!.hidden, false);
   r.hp = 0; r.phase = 'ended'; r.winner = 'attack'; r.reason = '醫院主機失守'; history.update([r]); monitor.render(r, history.get(r.id)!);
   assert.equal(root.querySelector<HTMLElement>('#monitor-stale')!.hidden, true);
+  assert.equal(root.querySelector('[aria-label="醫院總血量"]')!.getAttribute('aria-valuenow'), '0');
   assert.equal(root.querySelectorAll('.node-down').length, 2); assert.match(root.textContent, /攻擊方獲勝/);
   assert.equal(root.dataset.phase, 'ended');
 });

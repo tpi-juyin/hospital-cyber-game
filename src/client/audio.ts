@@ -66,6 +66,8 @@ export class BattleAudio {
     } catch { return Promise.resolve(); } // Audio must never prevent play on unsupported devices.
   }
 
+  isRunning() { return this.context?.state === 'running'; }
+
   configure(state: AudioState) { this.state = state; this.sync(); }
 
   action(role: Role, strategy: CombatStrategy, remote = false) {

@@ -8,9 +8,11 @@ import './monitor.css';
 import './arcade.css';
 import './host-readable.css';
 import './landscape.css';
+import './monitor-compact.css';
 import { GameDialog } from './game-dialog';
 import { QrDialog } from './qr-dialog';
 const hostDialog = new GameDialog(), qrDialog = new QrDialog();
+import { MonitorAudio } from './monitor-audio';
 import { ServerMonitor } from './monitor';
 import { TelemetryHistory } from './telemetry';
 const app = document.querySelector<HTMLDivElement>('#app')!;
@@ -28,14 +30,19 @@ function roomCard(r: RoomView) {
   return `<article class="room-card"><div class="room-card-top"><strong>${r.code}</strong><span class="phase-pill ${r.phase}">${phases[r.phase]}</span></div><div class="room-card-names"><span>${esc(attacker?.name || '等待玩家')}</span><b>VS</b><span>${esc(defender?.name || '等待對手')}</span></div><div class="meter hp"><i style="width:${r.hp}%"></i></div><div class="room-card-info"><span>血量 ${Math.ceil(r.hp)}% · 護盾 ${Math.ceil(r.shield)}</span><span>${r.mode === 'solo' ? '單人' : '雙人'}${r.ultimateMode ? '・大招' : ''} · ${r.phase === 'playing' ? Math.ceil(r.remainingMs / 1000) : r.duration} 秒</span></div><div class="room-card-actions"><button data-project="${r.id}">戰況儀表板 ${icon('arrow', 13)}</button><button data-close="${r.id}">關閉房間</button></div></article>`;
 }
 const monitorElement = document.querySelector<HTMLElement>('#projection')!;
-const monitor = new ServerMonitor(monitorElement);
+const hostAudio = new MonitorAudio(app);
+document.querySelector('.host-header-actions')!.insertAdjacentHTML('afterbegin', hostAudio.controls());
+const monitor = new ServerMonitor(monitorElement, '返回指揮中心', hostAudio);
+hostAudio.lobby(true);
+document.addEventListener('click', e => { if (!(e.target as Element).closest('[data-monitor-audio]')) hostAudio.activate(); });
+document.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') hostAudio.activate(); });
 function projection() {
   const r = state?.rooms.find(r => r.id === selected), opening = monitorElement.hidden && !!r;
   monitorElement.hidden = !r;
   document.title = `醫院資安攻防戰 · ${r ? '戰況儀表板' : '指揮中心'}`;
   document.body.classList.toggle('monitor-open', !!r);
   document.querySelector<HTMLElement>('.host-shell')!.inert = !!r;
-  if (!r) { selected = null; return; }
+  if (!r) { hostAudio.connection(stale); monitor.leave(); selected = null; return; }
   monitor.render(r, telemetry.get(r.id)!, stale);
   if (opening) monitorElement.querySelector<HTMLButtonElement>('[data-exit]')!.focus();
 }
@@ -87,14 +94,14 @@ function render(s: HostView) {
 }
 document.querySelector('#rooms')!.addEventListener('click', e => {
   const target = (e.target as HTMLElement).closest<HTMLButtonElement>('button'); if (!target) return;
-  if (target.dataset.project) { selected = target.dataset.project; projection(); }
+  if (target.dataset.project) { monitor.enter(); selected = target.dataset.project; projection(); }
   if (target.dataset.close) { const roomId = target.dataset.close; void hostDialog.open({ title: '關閉這個房間？', message: '房內玩家將返回主選單，這場對戰會結束。', confirm: '關閉房間', cancel: '保留房間' }).then(ok => { if (ok) void action({ kind: 'close', roomId }); }); }
 });
 document.querySelector('#projection')!.addEventListener('click', e => { if ((e.target as HTMLElement).closest('[data-exit]')) exitProjection(); });
 document.addEventListener('keydown', e => {
-  if (!selected || hostDialog.isOpen) return;
+  if (!selected || hostDialog.isOpen || e.defaultPrevented) return;
   if (e.key === 'Escape') exitProjection();
-  if (e.key === 'Tab') { e.preventDefault(); monitorElement.querySelector<HTMLButtonElement>('[data-exit]')?.focus(); }
+
 });
 document.querySelector('#host-duration')!.addEventListener('change', e => { void action({ kind: 'duration', value: Number((e.target as HTMLSelectElement).value) }); });
 document.querySelector('#accepting')!.addEventListener('click', () => { if (state) void action({ kind: 'accepting', value: !state.lobby.accepting }); });
@@ -120,7 +127,7 @@ document.querySelector('#stop')!.addEventListener('click', () => {
     if (!confirmed || !await action({ kind: 'stop' })) return;
     qrDialog.close();
     if (cloud) return;
-    stopped = true; app.innerHTML = `<div class="stopped-card">${icon('shield', 50)}<h1>活動已結束</h1><p>遊戲服務與公開通道正在關閉。<br>下次雙擊啟動檔，即可開始全新活動。</p></div>`;
+    hostAudio.lobby(false); monitor.leave(); stopped = true; app.innerHTML = `<div class="stopped-card">${icon('shield', 50)}<h1>活動已結束</h1><p>遊戲服務與公開通道正在關閉。<br>下次雙擊啟動檔，即可開始全新活動。</p></div>`;
   });
 });
 async function poll() {
