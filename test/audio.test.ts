@@ -188,3 +188,13 @@ test('final-ten-second music speeds up from 168 to 210 BPM without restarting, t
   const nextRound = hats().length; audio.configure({ ...active, urgent: false }); advance(.8);
   assertSpacing(hats().slice(nextRound), 60 / 168 / 2);
 });
+
+test('gesture retries a pending autoplay resume without creating another context or ignoring mute', async t => {
+ t.mock.timers.enable({apis:['setInterval']});
+ const ctx=new Context();let created=0;
+ ctx.resume=()=>{ctx.resumeCalls++;if(ctx.resumeCalls===1)return new Promise<void>(()=>{});ctx.state='running';return Promise.resolve();};
+ const audio=new BattleAudio(()=>{created++;return ctx as unknown as AudioContext});t.after(()=>audio.dispose());
+ audio.configure({...active,effects:false});void audio.unlock();assert.equal(ctx.resumeCalls,1);
+ await audio.unlock(true);assert.equal(ctx.resumeCalls,2);assert.equal(created,1);assert.ok(ctx.oscillators.length>0);
+ audio.configure({...active,effects:false,music:false});const before=ctx.resumeCalls;await audio.unlock(true);assert.equal(ctx.resumeCalls,before);assert.ok(ctx.oscillators.every(o=>o.stopped));
+});

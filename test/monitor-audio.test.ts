@@ -55,3 +55,14 @@ test('observed taps are paced, canceled on mute/exit and never replay a network 
  root.querySelector<import('happy-dom').HTMLButtonElement>('[data-monitor-audio="effects"]')!.click();t.mock.timers.tick(1000);assert.equal(taps,5);
  m.leave();
 });
+
+test('host attempts autoplay, preserves mute across reload and lets blocked audio be muted', t=>{
+ const w=new Window();t.after(()=>w.happyDOM.close());const root=w.document.body;const calls:boolean[]=[];let state:AudioState;
+ const fake={configure(s:AudioState){state=s},unlock:async(retry:boolean)=>{calls.push(retry)},isRunning:()=>false};
+ const m=new MonitorAudio(root as unknown as HTMLElement,fake as unknown as BattleAudio);root.innerHTML=m.controls();m.lobby(true);
+ assert.deepEqual(calls,[false]);assert.equal(root.querySelector('[data-monitor-audio-hint]'),null);
+ m.activate();assert.deepEqual(calls,[false,true]);
+ root.querySelector<import('happy-dom').HTMLButtonElement>('[data-monitor-audio="music"]')!.click();assert.equal(state!.music,false);
+ calls.length=0;const next=new MonitorAudio(w.document.createElement('div') as unknown as HTMLElement,fake as unknown as BattleAudio);next.lobby(true);
+ assert.equal(state!.music,false);assert.equal(calls.length,0,'stored mute must suppress autoplay');m.leave();next.lobby(false);
+});

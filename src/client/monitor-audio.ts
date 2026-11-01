@@ -22,8 +22,6 @@ export class MonitorAudio {
     root.addEventListener('click', e => {
       const button = (e.target as Element).closest<HTMLButtonElement>('[data-monitor-audio]');
       if (!button) return;
-      const enabled = button.dataset.monitorAudio === 'music' ? this.music : this.effects;
-      if (enabled && !this.audio.isRunning()) { void this.unlock(); return; }
       if (button.dataset.monitorAudio === 'music') this.music = !this.music; else this.effects = !this.effects;
       try { this.doc.defaultView!.localStorage.setItem('hospital-monitor-audio', JSON.stringify({effects:this.effects,music:this.music})); } catch { /* Optional preference. */ }
       this.configure(); this.buttons(); void this.unlock();
@@ -31,7 +29,7 @@ export class MonitorAudio {
     this.doc.addEventListener('visibilitychange', () => { this.previous = undefined; this.configure(); });
     this.doc.defaultView?.addEventListener('pagehide', () => this.connection(true));
   }
-  controls() { return '<div class="monitor-audio-controls"><button type="button" class="icon-button" data-monitor-audio="effects"></button><button type="button" class="icon-button" data-monitor-audio="music"></button><span data-monitor-audio-hint hidden>點音樂或音效按鈕啟用聲音</span></div>'; }
+  controls() { return '<div class="monitor-audio-controls"><button type="button" class="icon-button" data-monitor-audio="effects"></button><button type="button" class="icon-button" data-monitor-audio="music"></button></div>'; }
   buttons() {
     for (const kind of ['effects','music'] as const) {
       for (const b of this.root.querySelectorAll<HTMLButtonElement>(`[data-monitor-audio="${kind}"]`)) {
@@ -41,18 +39,10 @@ export class MonitorAudio {
       }
     }
   }
-  lobby(enabled: boolean) { this.lobbyMusic = enabled; this.configure(); this.buttons(); this.hints(); }
+  lobby(enabled: boolean) { this.lobbyMusic = enabled; this.configure(); this.buttons(); if (enabled && this.music) void this.unlock(false); }
   activate() { void this.unlock(); }
   enter() { this.leave(); this.entered = true; this.stale = false; this.configure(); void this.unlock(); }
-  private async unlock() {
-    const pending = this.audio.unlock();
-    this.hints();
-    await pending;
-    this.hints();
-  }
-  private hints() {
-    for (const hint of this.root.querySelectorAll<HTMLElement>('[data-monitor-audio-hint]')) hint.hidden = !((this.entered || this.lobbyMusic) && (this.music || this.effects) && !this.audio.isRunning());
-  }
+  private unlock(retryResume = true) { return this.audio.unlock(retryResume); }
   leave() { this.entered = false; this.previous = undefined; this.room = undefined; this.configure(); }
   connection(stale: boolean) { this.stale = stale; if (stale) this.previous = undefined; this.configure(); }
   private configure() {

@@ -49,8 +49,8 @@ export class BattleAudio {
 
   constructor(private createContext: () => AudioContext = () => new AudioContext()) {}
 
-  /** Called directly from a user gesture; never create audio during initial page load. */
-  unlock(): Promise<void> {
+  /** Explicit activation: hosts may attempt autoplay, then retry resume from a user gesture. */
+  unlock(retryResume = false): Promise<void> {
     if (this.closed || (!this.state.effects && !this.state.music) || !this.state.visible) return Promise.resolve();
     try {
       if (!this.context) {
@@ -61,7 +61,10 @@ export class BattleAudio {
         ctx.onstatechange = () => this.sync();
       }
       if (this.context.state === 'running') { this.sync(); return Promise.resolve(); }
-      if (!this.resuming) this.resuming = this.context.resume().then(() => this.sync()).catch(() => {}).finally(() => { this.resuming = undefined; });
+      if (!this.resuming || retryResume) {
+        const pending = this.context.resume().then(() => this.sync()).catch(() => {}).finally(() => { if (this.resuming === pending) this.resuming = undefined; });
+        this.resuming = pending;
+      }
       return this.resuming;
     } catch { return Promise.resolve(); } // Audio must never prevent play on unsupported devices.
   }
